@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exploradors de Mapes: Catalunya i Europa</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Quicksand i Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                        display: ['Quicksand', 'sans-serif'],
+                    },
+                    colors: {
+                        ocea: '#E0F2FE',
+                        mar: '#0284C7',
+                        terra: '#FEF9C3',
+                        prat: '#DCFCE7',
+                        muntanya: '#D97706',
+                        cim: '#92400E',
+                        atles: '#FFFDF7'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F0F9FF;
+            background-image: radial-gradient(#BAE6FD 1px, transparent 1px), radial-gradient(#FDE68A 1px, #F8FAFC 1px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse-pin {
+            animation: pulsePin 2s infinite;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+        @keyframes pulsePin {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.18); }
+        }
+        .map-region {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .map-region:hover {
+            filter: brightness(0.92);
+            stroke-width: 3px;
+        }
+        .compass-point {
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            transform-origin: 150px 150px;
+        }
+        .compass-point:hover {
+            filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.7));
+        }
+        /* Scrollbar personalitzat */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #94A3B8; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748B; }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between antialiased selection:bg-amber-200 selection:text-slate-900">
+
+    <!-- CAPÇALERA SUPERIOR I NAVEGACIÓ -->
+    <header class="bg-white/95 backdrop-blur-md border-b-2 border-sky-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <!-- Logo i títol -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-500 to-emerald-500 text-white flex items-center justify-center shadow-md text-2xl">
+                            🧭
+                        </div>
+                        <div>
+                            <h1 class="font-display font-bold text-xl sm:text-2xl text-slate-900 leading-tight">
+                                Exploradors de Mapes
+                            </h1>
+                            <p class="text-xs sm:text-sm font-semibold text-sky-700">
+                                Catalunya i Europa · 5è de Primària
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Marcador global d'estrelles -->
+                    <div class="md:hidden flex items-center gap-1.5 bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-full font-bold text-amber-900 text-sm shadow-sm">
+                        <span>⭐</span>
+                        <span id="total-stars-mobile">0</span>
+                    </div>
+                </div>
+
+                <!-- Barra de pestanyes de navegació -->
+                <nav class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0" aria-label="Seccions principals">
+                    <button onclick="switchTab('orientacio')" id="tab-orientacio"
+                        class="nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-sky-600 text-white shadow-md shadow-sky-600/20 cursor-pointer">
+                        <span>🧭</span>
+                        <span>1. Orientació</span>
+                    </button>
+                    <button onclick="switchTab('catalunya')" id="tab-catalunya"
+                        class="nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-sky-50 hover:text-sky-700 cursor-pointer">
+                        <span>🏔️</span>
+                        <span>2. Catalunya</span>
+                    </button>
+                    <button onclick="switchTab('europa')" id="tab-europa"
+                        class="nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-sky-50 hover:text-sky-700 cursor-pointer">
+                        <span>🌍</span>
+                        <span>3. Europa</span>
+                    </button>
+                    <button onclick="switchTab('quiz')" id="tab-quiz"
+                        class="nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300 cursor-pointer">
+                        <span>🏆</span>
+                        <span>4. Gran Repte</span>
+                    </button>
+                </nav>
+
+                <!-- Marcador global desktop -->
+                <div class="hidden md:flex items-center gap-2 bg-amber-100 border-2 border-amber-300 px-4 py-1.5 rounded-2xl font-display font-bold text-amber-900 shadow-sm">
+                    <span class="text-lg">⭐</span>
+                    <span class="text-xs uppercase tracking-wider text-amber-800">Estrelles:</span>
+                    <span id="total-stars-desktop" class="text-lg">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTINGUT PRINCIPAL -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:py-8">
+
+        <!-- ========================================================= -->
+        <!-- SECCIÓ 1: ROSA DELS VENTS I ORIENTACIÓ                    -->
+        <!-- ========================================================= -->
+        <section id="section-orientacio" class="space-y-6 fade-in">
+            <!-- Capçalera de secció -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-sky-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 uppercase tracking-wider mb-1">Taller de Cartografia</span>
+                    <h2 class="font-display font-bold text-2xl sm:text-3xl text-slate-900">Rosa dels Vents i Elements del Mapa</h2>
+                    <p class="text-slate-600 text-sm sm:text-base mt-1">Fes clic sobre els punts de la brúixola o els conceptes del mapa per aprendre com orientar-nos.</p>
+                </div>
+                <div class="flex gap-2 bg-slate-100 p-1.5 rounded-2xl self-start">
+                    <button onclick="setOrientacioMode('explora')" id="ori-mode-explora"
+                        class="px-4 py-2 rounded-xl font-display font-bold text-sm bg-white text-sky-700 shadow-sm transition cursor-pointer">
+                        🔍 Explora la Brúixola
+                    </button>
+                    <button onclick="setOrientacioMode('joc')" id="ori-mode-joc"
+                        class="px-4 py-2 rounded-xl font-display font-bold text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                        🎮 Mini-joc d'Orientació
+                    </button>
+                </div>
+            </div>
+
+            <!-- MODE EXPLORA ORIENTACIÓ -->
+            <div id="orientacio-explora-view" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Columna esquerra: Rosa dels Vents SVG Interactiva -->
+                <div class="lg:col-span-6 bg-white rounded-3xl p-6 shadow-md border border-sky-100 flex flex-col items-center justify-center">
+                    <h3 class="font-display font-bold text-lg text-slate-800 mb-2">Toca qualsevol punt cardinal o col·lateral</h3>
+                    <div class="w-full max-w-[340px] aspect-square relative">
+                        <svg viewBox="0 0 300 300" class="w-full h-full drop-shadow-md">
+                            <!-- Cercles exteriors -->
+                            <circle cx="150" cy="150" r="136" fill="#F8FAFC" stroke="#0284C7" stroke-width="3"/>
+                            <circle cx="150" cy="150" r="124" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5" stroke-dasharray="4 4"/>
+                            <circle cx="150" cy="150" r="95" fill="none" stroke="#CBD5E1" stroke-width="1"/>
+
+                            <!-- Punts col·laterals (NE, SE, SO, NO) -->
+                            <!-- Nord-est (NE) -->
+                            <g class="compass-point" onclick="selectCompassPoint('NE')">
+                                <polygon points="150,150 164,136 225,75 164,164" fill="#FBBF24" stroke="#B45309" stroke-width="1.5"/>
+                                <circle cx="234" cy="66" r="17" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                                <text x="234" y="71" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="13" fill="#92400E">NE</text>
+                            </g>
+                            <!-- Sud-est (SE) -->
+                            <g class="compass-point" onclick="selectCompassPoint('SE')">
+                                <polygon points="150,150 164,164 225,225 136,164" fill="#FBBF24" stroke="#B45309" stroke-width="1.5"/>
+                                <circle cx="234" cy="234" r="17" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                                <text x="234" y="239" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="13" fill="#92400E">SE</text>
+                            </g>
+                            <!-- Sud-oest (SO) -->
+                            <g class="compass-point" onclick="selectCompassPoint('SO')">
+                                <polygon points="150,150 136,164 75,225 136,136" fill="#FBBF24" stroke="#B45309" stroke-width="1.5"/>
+                                <circle cx="66" cy="234" r="17" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                                <text x="66" y="239" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="13" fill="#92400E">SO</text>
+                            </g>
+                            <!-- Nord-oest (NO) -->
+                            <g class="compass-point" onclick="selectCompassPoint('NO')">
+                                <polygon points="150,150 136,136 75,75 164,136" fill="#FBBF24" stroke="#B45309" stroke-width="1.5"/>
+                                <circle cx="66" cy="66" r="17" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+                                <text x="66" y="71" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="13" fill="#92400E">NO</text>
+                            </g>
+
+                            <!-- Punts cardinals principals (N, S, E, O) -->
+                            <!-- Nord (N) -->
+                            <g class="compass-point" onclick="selectCompassPoint('N')">
+                                <polygon points="150,150 133,133 150,36 167,133" fill="#EF4444" stroke="#991B1B" stroke-width="2"/>
+                                <circle cx="150" cy="22" r="18" fill="#EF4444" stroke="#FFFFFF" stroke-width="2"/>
+                                <text x="150" y="28" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="16" fill="#FFFFFF">N</text>
+                            </g>
+                            <!-- Sud (S) -->
+                            <g class="compass-point" onclick="selectCompassPoint('S')">
+                                <polygon points="150,150 167,167 150,264 133,167" fill="#0284C7" stroke="#075985" stroke-width="2"/>
+                                <circle cx="150" cy="278" r="18" fill="#0284C7" stroke="#FFFFFF" stroke-width="2"/>
+                                <text x="150" y="284" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="16" fill="#FFFFFF">S</text>
+                            </g>
+                            <!-- Est (E) -->
+                            <g class="compass-point" onclick="selectCompassPoint('E')">
+                                <polygon points="150,150 167,133 264,150 167,167" fill="#10B981" stroke="#065F46" stroke-width="2"/>
+                                <circle cx="278" cy="150" r="18" fill="#10B981" stroke="#FFFFFF" stroke-width="2"/>
+                                <text x="278" y="156" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="16" fill="#FFFFFF">E</text>
+                            </g>
+                            <!-- Oest (O) -->
+                            <g class="compass-point" onclick="selectCompassPoint('O')">
+                                <polygon points="150,150 133,167 36,150 133,133" fill="#8B5CF6" stroke="#5B21B6" stroke-width="2"/>
+                                <circle cx="22" cy="150" r="18" fill="#8B5CF6" stroke="#FFFFFF" stroke-width="2"/>
+                                <text x="22" y="156" text-anchor="middle" font-family="Quicksand, sans-serif" font-weight="700" font-size="16" fill="#FFFFFF">O</text>
+                            </g>
+
+                            <!-- Centre de la brúixola -->
+                            <circle cx="150" cy="150" r="14" fill="#1E293B" stroke="#F8FAFC" stroke-width="3"/>
+                            <circle cx="150" cy="150" r="5" fill="#FBBF24"/>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2 text-center">L'agulla vermella sempre assenyala el <strong>Nord</strong>.</p>
+                </div>
+
+                <!-- Columna dreta: Fitxa explicativa + Conceptes clau del mapa -->
+                <div class="lg:col-span-6 space-y-5">
+                    <!-- Targeta dinàmica del punt seleccionat -->
+                    <div id="compass-info-card" class="bg-white rounded-3xl p-6 shadow-md border-2 border-sky-200 transition-all">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span id="compass-info-badge" class="w-12 h-12 rounded-2xl bg-red-500 text-white font-display font-bold text-xl flex items-center justify-center shadow-sm">
+                                N
+                            </span>
+                            <div>
+                                <span id="compass-info-type" class="text-xs font-bold uppercase tracking-wider text-sky-600">Punt Cardinal Principal</span>
+                                <h3 id="compass-info-title" class="font-display font-bold text-2xl text-slate-900">Nord (N)</h3>
+                            </div>
+                        </div>
+                        <p id="compass-info-desc" class="text-slate-700 text-base leading-relaxed mb-3">
+                            És el punt cardinal principal de referència. Als mapes, el Nord sempre queda a la part de <strong>dalt</strong>. Si mires cap al Nord, tindràs l'Est a la dreta, l'Oest a l'esquerra i el Sud darrere teu.
+                        </p>
+                        <div class="bg-sky-50 rounded-2xl p-3.5 border border-sky-100 text-sm text-sky-900">
+                            <strong>💡 Exemple a Catalunya:</strong> Els <strong>Pirineus</strong> es troben al <strong>Nord</strong> de Catalunya, fent frontera amb França i Andorra.
+                        </div>
+                    </div>
+
+                    <!-- Els 4 conceptes clau d'un mapa -->
+                    <div class="bg-white rounded-3xl p-6 shadow-md border border-sky-100">
+                        <h3 class="font-display font-bold text-lg text-slate-900 mb-3">📐 Altres eines per llegir un mapa</h3>
+                        <div class="grid grid-cols-2 gap-2.5 mb-4">
+                            <button onclick="selectMapTool('parallels')" class="map-tool-btn p-3 rounded-2xl border-2 border-sky-500 bg-sky-50 text-left font-bold text-sm text-sky-900 transition cursor-pointer" data-tool="parallels">
+                                🌐 Paral·lels
+                            </button>
+                            <button onclick="selectMapTool('meridians')" class="map-tool-btn p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-sky-300 text-left font-bold text-sm text-slate-700 transition cursor-pointer" data-tool="meridians">
+                                🧭 Meridians
+                            </button>
+                            <button onclick="selectMapTool('escala')" class="map-tool-btn p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-sky-300 text-left font-bold text-sm text-slate-700 transition cursor-pointer" data-tool="escala">
+                                📏 Escala
+                            </button>
+                            <button onclick="selectMapTool('llegenda')" class="map-tool-btn p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-sky-300 text-left font-bold text-sm text-slate-700 transition cursor-pointer" data-tool="llegenda">
+                                🗺️ Llegenda
+                            </button>
+                        </div>
+                        <div id="map-tool-detail" class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-sm text-slate-800 leading-relaxed">
+                            <strong>Paral·lels:</strong> Són línies imaginàries horitzontals que envolten la Terra d'Est a Oest. El paral·lel principal és l'<strong>Equador</strong> (0°), que divideix el planeta en l'hemisferi Nord i l'hemisferi Sud. Serveixen per mesurar la <em>latitud</em>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODE MINI-JOC D'ORIENTACIÓ -->
+            <div id="orientacio-joc-view" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 fade-in">
+                <!-- Mapa esquemàtic interactiu -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-sky-100">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="font-display font-bold text-slate-800 text-base sm:text-lg">🗺️ Mapa d'Orientació de Catalunya</span>
+                        <span class="text-xs font-bold bg-sky-100 text-sky-800 px-3 py-1 rounded-full">Nord ↑ · Sud ↓ · Est → · Oest ←</span>
+                    </div>
+                    <div class="w-full bg-sky-100 rounded-2xl border-2 border-sky-200 overflow-hidden relative">
+                        <svg viewBox="0 0 500 400" class="w-full h-auto">
+                            <!-- Fons mar -->
+                            <rect width="500" height="400" fill="#BAE6FD"/>
+                            <!-- Quadrícula de coordenades -->
+                            <g stroke="#7DD3FC" stroke-width="1" stroke-dasharray="4 4">
+                                <line x1="125" y1="0" x2="125" y2="400"/>
+                                <line x1="250" y1="0" x2="250" y2="400"/>
+                                <line x1="375" y1="0" x2="375" y2="400"/>
+                                <line x1="0" y1="100" x2="500" y2="100"/>
+                                <line x1="0" y1="200" x2="500" y2="200"/>
+                                <line x1="0" y1="300" x2="500" y2="300"/>
+                            </g>
+                            <!-- Silueta simplificada de Catalunya -->
+                            <path d="M 95,45 L 155,40 L 210,65 L 315,75 L 425,70 L 445,115 L 415,175 L 335,235 L 245,275 L 155,320 L 125,365 L 85,345 L 95,285 L 70,210 L 85,120 Z"
+                                  fill="#FEF9C3" stroke="#D97706" stroke-width="3" stroke-linejoin="round"/>
+                            <!-- Petit mapa de referència -->
+                            <text x="410" y="340" font-family="Quicksand, sans-serif" font-weight="700" font-size="14" fill="#0369A1" text-anchor="middle">Mar Mediterrània</text>
+
+                            <!-- Mini Rosa dels vents a la cantonada -->
+                            <g transform="translate(435, 55)">
+                                <circle cx="0" cy="0" r="28" fill="white" stroke="#0284C7" stroke-width="2"/>
+                                <text x="0" y="-14" text-anchor="middle" font-weight="800" font-size="11" fill="#EF4444">N</text>
+                                <text x="0" y="21" text-anchor="middle" font-weight="800" font-size="11" fill="#0284C7">S</text>
+                                <text x="17" y="4" text-anchor="middle" font-weight="800" font-size="11" fill="#10B981">E</text>
+                                <text x="-17" y="4" text-anchor="middle" font-weight="800" font-size="11" fill="#8B5CF6">O</text>
+                                <line x1="0" y1="-10" x2="0" y2="10" stroke="#94A3B8" stroke-width="1.5"/>
+                                <line x1="-10" y1="0" x2="10" y2="0" stroke="#94A3B8" stroke-width="1.5"/>
+                            </g>
+
+                            <!-- Ciutats referència amb línies guia dinàmiques -->
+                            <line id="ori-guide-line" x1="0" y1="0" x2="0" y2="0" stroke="#EF4444" stroke-width="3" stroke-dasharray="6 4" class="hidden"/>
+
+                            <!-- Vielha (Nord-oest) -->
+                            <g transform="translate(115, 62)">
+                                <circle r="8" fill="#8B5CF6" stroke="white" stroke-width="2"/>
+                                <text y="-12" text-anchor="middle" font-weight="700" font-size="12" fill="#1E293B">Vielha</text>
+                            </g>
+                            <!-- Puigcerdà / Pirineu Central (Nord) -->
+                            <g transform="translate(265, 85)">
+                                <circle r="8" fill="#EF4444" stroke="white" stroke-width="2"/>
+                                <text y="-12" text-anchor="middle" font-weight="700" font-size="12" fill="#1E293B">Pirineus</text>
+                            </g>
+                            <!-- Girona (Nord-est) -->
+                            <g transform="translate(390, 125)">
+                                <circle r="9" fill="#F59E0B" stroke="white" stroke-width="2"/>
+                                <text y="-13" text-anchor="middle" font-weight="700" font-size="13" fill="#1E293B">Girona</text>
+                            </g>
+                            <!-- Lleida (Oest) -->
+                            <g transform="translate(120, 205)">
+                                <circle r="9" fill="#8B5CF6" stroke="white" stroke-width="2"/>
+                                <text x="-14" y="4" text-anchor="end" font-weight="700" font-size="13" fill="#1E293B">Lleida</text>
+                            </g>
+                            <!-- Manresa / Centre -->
+                            <g transform="translate(265, 175)">
+                                <circle r="8" fill="#0F172A" stroke="white" stroke-width="2"/>
+                                <text y="-12" text-anchor="middle" font-weight="700" font-size="12" fill="#1E293B">Manresa</text>
+                            </g>
+                            <!-- Barcelona (Est / Centre-Est) -->
+                            <g transform="translate(325, 215)">
+                                <circle r="10" fill="#EF4444" stroke="white" stroke-width="2.5"/>
+                                <text x="14" y="4" text-anchor="start" font-weight="800" font-size="13" fill="#1E293B">Barcelona</text>
+                            </g>
+                            <!-- Tarragona (Sud-oest de BCN) -->
+                            <g transform="translate(225, 265)">
+                                <circle r="9" fill="#0284C7" stroke="white" stroke-width="2"/>
+                                <text y="22" text-anchor="middle" font-weight="700" font-size="13" fill="#1E293B">Tarragona</text>
+                            </g>
+                            <!-- Tortosa / Delta de l'Ebre (Sud) -->
+                            <g transform="translate(125, 330)">
+                                <circle r="8" fill="#0284C7" stroke="white" stroke-width="2"/>
+                                <text x="13" y="4" text-anchor="start" font-weight="700" font-size="12" fill="#1E293B">Delta de l'Ebre</text>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Panell de preguntes d'orientació -->
+                <div class="lg:col-span-5 bg-white rounded-3xl p-6 shadow-md border border-sky-100 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900">
+                                Repte <span id="ori-q-num">1</span> de 6
+                            </span>
+                            <span class="text-sm font-bold text-emerald-700">
+                                Encerts: <span id="ori-score">0</span>
+                            </span>
+                        </div>
+
+                        <h3 id="ori-question-text" class="font-display font-bold text-xl text-slate-900 mb-5 leading-snug">
+                            Des de Barcelona, cap a quina direcció queda Girona?
+                        </h3>
+
+                        <!-- Botonera de 8 punts cardinals -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2.5" id="ori-options">
+                            <button onclick="checkOrientacioAnswer('N')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">⬆️ Nord (N)</button>
+                            <button onclick="checkOrientacioAnswer('NE')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">↗️ Nord-est (NE)</button>
+                            <button onclick="checkOrientacioAnswer('E')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">➡️ Est (E)</button>
+                            <button onclick="checkOrientacioAnswer('SE')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">↘️ Sud-est (SE)</button>
+                            <button onclick="checkOrientacioAnswer('S')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">⬇️ Sud (S)</button>
+                            <button onclick="checkOrientacioAnswer('SO')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">↙️ Sud-oest (SO)</button>
+                            <button onclick="checkOrientacioAnswer('O')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">⬅️ Oest (O)</button>
+                            <button onclick="checkOrientacioAnswer('NO')" class="ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer">↖️ Nord-oest (NO)</button>
+                        </div>
+
+                        <!-- Retroacció -->
+                        <div id="ori-feedback" class="hidden mt-4 p-4 rounded-2xl text-sm font-medium leading-relaxed"></div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-t border-slate-100 flex justify-end">
+                        <button id="ori-next-btn" onclick="nextOrientacioQuestion()" class="hidden px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-display font-bold text-sm shadow transition cursor-pointer">
+                            Següent repte →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- SECCIÓ 2: MAPA DE CATALUNYA (FÍSIC I POLÍTIC)             -->
+        <!-- ========================================================= -->
+        <section id="section-catalunya" class="hidden space-y-6 fade-in">
+            <!-- Barra superior de controls -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-sky-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 uppercase tracking-wider mb-1">Geografia de Catalunya</span>
+                    <h2 class="font-display font-bold text-2xl sm:text-3xl text-slate-900">Mapa Interactiu de Catalunya</h2>
+                </div>
+
+                <!-- Controls de Capa (Polític/Físic) i Mode (Explora/Repte) -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Selector Capa -->
+                    <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                        <button onclick="setCatLayer('politic')" id="cat-layer-politic"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-amber-400 text-slate-900 shadow-sm transition cursor-pointer">
+                            🏛️ Mapa Polític
+                        </button>
+                        <button onclick="setCatLayer('fisic')" id="cat-layer-fisic"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                            ⛰️ Mapa Físic
+                        </button>
+                    </div>
+
+                    <!-- Selector Mode -->
+                    <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                        <button onclick="setCatMode('explora')" id="cat-mode-explora"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-sky-600 text-white shadow-sm transition cursor-pointer">
+                            🔍 Mode Explora
+                        </button>
+                        <button onclick="setCatMode('repte')" id="cat-mode-repte"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                            🎯 Mode Repte
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra del Mode Repte (només visible en mode Repte) -->
+            <div id="cat-challenge-bar" class="hidden bg-gradient-to-r from-amber-400 to-orange-400 rounded-2xl p-4 sm:p-5 text-slate-900 shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-11 h-11 rounded-xl bg-white/90 flex items-center justify-center text-2xl shadow-sm">🎯</span>
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-amber-950 block">Busca al mapa:</span>
+                        <p id="cat-challenge-target" class="font-display font-bold text-lg sm:text-xl text-slate-950">
+                            La província de Lleida
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="bg-white/85 px-3.5 py-1.5 rounded-xl font-bold text-sm">
+                        Punts: <span id="cat-challenge-score" class="text-emerald-700">0</span>
+                    </div>
+                    <button onclick="nextCatChallenge()" class="px-3.5 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition cursor-pointer">
+                        Salta ⏭️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenidor Mapa SVG + Fitxa Educativa -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Mapa SVG de Catalunya (7 columnes) -->
+                <div class="lg:col-span-7 bg-white rounded-3xl p-4 sm:p-5 shadow-md border border-sky-100">
+                    <div class="w-full rounded-2xl overflow-hidden border-2 border-sky-200 bg-sky-200 relative">
+                        <svg id="svg-catalunya" viewBox="0 0 600 520" class="w-full h-auto select-none">
+                            <!-- Mar Mediterrània -->
+                            <rect width="600" height="520" fill="#BAE6FD"/>
+                            <!-- Territoris veïns (França, Andorra, Aragó, País Valencià) -->
+                            <path d="M 0,0 L 600,0 L 600,95 L 485,82 L 380,90 L 260,72 L 155,42 L 95,48 L 80,145 L 62,245 L 88,335 L 75,415 L 125,465 L 0,520 Z"
+                                  fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2"/>
+                            <text x="290" y="32" font-family="Quicksand, sans-serif" font-weight="700" font-size="14" fill="#64748B" text-anchor="middle">FRANÇA</text>
+                            <rect x="235" y="54" width="46" height="20" rx="5" fill="#CBD5E1"/>
+                            <text x="258" y="68" font-family="Nunito, sans-serif" font-weight="800" font-size="10" fill="#334155" text-anchor="middle">ANDORRA</text>
+                            <text x="35" y="250" font-family="Quicksand, sans-serif" font-weight="700" font-size="14" fill="#64748B" text-anchor="middle" transform="rotate(-90 35 250)">ARAGÓ</text>
+                            <text x="480" y="380" font-family="Quicksand, sans-serif" font-weight="700" font-size="16" fill="#0284C7" text-anchor="middle">Mar Mediterrània</text>
+
+                            <!-- ======================================= -->
+                            <!-- CAPA POLÍTICA: LES 4 PROVÍNCIES         -->
+                            <!-- ======================================= -->
+                            <g id="cat-group-politic">
+                                <!-- Província de Lleida -->
+                                <path id="cat-prov-lleida" class="map-region" onclick="handleCatSelect('prov_lleida')"
+                                      d="M 95,48 L 155,42 L 235,68 L 245,115 L 225,185 L 210,245 L 155,280 L 90,260 L 65,220 L 82,135 Z"
+                                      fill="#FDE047" stroke="#A16207" stroke-width="2.5" stroke-linejoin="round"/>
+                                <!-- Província de Girona -->
+                                <path id="cat-prov-girona" class="map-region" onclick="handleCatSelect('prov_girona')"
+                                      d="M 275,72 L 380,90 L 485,82 L 515,125 L 485,185 L 435,225 L 365,195 L 330,145 L 270,115 Z"
+                                      fill="#86EFAC" stroke="#15803D" stroke-width="2.5" stroke-linejoin="round"/>
+                                <!-- Província de Barcelona -->
+                                <path id="cat-prov-barcelona" class="map-region" onclick="handleCatSelect('prov_barcelona')"
+                                      d="M 245,115 L 270,115 L 330,145 L 365,195 L 435,225 L 365,285 L 315,315 L 265,295 L 210,245 L 225,185 Z"
+                                      fill="#FCA5A5" stroke="#B91C1C" stroke-width="2.5" stroke-linejoin="round"/>
+                                <!-- Província de Tarragona -->
+                                <path id="cat-prov-tarragona" class="map-region" onclick="handleCatSelect('prov_tarragona')"
+                                      d="M 90,260 L 155,280 L 210,245 L 265,295 L 315,315 L 245,365 L 185,405 L 165,455 L 125,445 L 135,395 L 85,355 Z"
+                                      fill="#93C5FD" stroke="#1D4ED8" stroke-width="2.5" stroke-linejoin="round"/>
+
+                                <!-- Etiquetes de Províncies i Capitals -->
+                                <g pointer-events="none" font-family="Quicksand, sans-serif" font-weight="700">
+                                    <text x="155" y="165" font-size="16" fill="#713F12" text-anchor="middle">LLEIDA</text>
+                                    <text x="405" y="145" font-size="16" fill="#14532D" text-anchor="middle">GIRONA</text>
+                                    <text x="305" y="215" font-size="16" fill="#7F1D1D" text-anchor="middle">BARCELONA</text>
+                                    <text x="180" y="340" font-size="15" fill="#1E3A8A" text-anchor="middle">TARRAGONA</text>
+                                </g>
+
+                                <!-- Pins de Capitals i Comarques destacades -->
+                                <!-- Vall d'Aran -->
+                                <g class="cursor-pointer" onclick="handleCatSelect('com_aran')">
+                                    <circle cx="118" cy="58" r="11" fill="#7C3AED" stroke="white" stroke-width="2.5" class="pulse-pin"/>
+                                    <text x="118" y="62" text-anchor="middle" font-size="11" fill="white" font-weight="bold">🏔️</text>
+                                    <text x="118" y="38" text-anchor="middle" font-size="11" font-weight="800" fill="#4C1D95">Vall d'Aran</text>
+                                </g>
+                                <!-- Alt Empordà -->
+                                <g class="cursor-pointer" onclick="handleCatSelect('com_emporda')">
+                                    <circle cx="475" cy="108" r="11" fill="#059669" stroke="white" stroke-width="2.5" class="pulse-pin"/>
+                                    <text x="475" y="112" text-anchor="middle" font-size="11" fill="white" font-weight="bold">🌊</text>
+                                    <text x="475" y="75" text-anchor="middle" font-size="11" font-weight="800" fill="#064E3B">Alt Empordà</text>
+                                </g>
+                                <!-- Segrià (Lleida capital) -->
+                                <g class="cursor-pointer" onclick="handleCatSelect('cap_lleida')">
+                                    <circle cx="115" cy="242" r="11" fill="#D97706" stroke="white" stroke-width="2.5"/>
+                                    <text x="115" y="246" text-anchor="middle" font-size="10" fill="white" font-weight="bold">★</text>
+                                    <text x="115" y="226" text-anchor="middle" font-size="11" font-weight="800" fill="#78350F">Lleida (Segrià)</text>
+                                </g>
+                                <!-- Girona capital -->
+                                <g class="cursor-pointer" onclick="handleCatSelect('cap_girona')">
+                                    <circle cx="432" cy="168" r="11" fill="#16A34A" stroke="white" stroke-width="2.5"/>
+                                    <text x="432" y="172" text-anchor="middle" font-size="10" fill="white" font-weight="bold">★</text>
+                                    <text x="432" y="189" text-anchor="middle" font-size="11" font-weight="800" fill="#14532D">Girona</text>
+                                </g>
+                                <!-- Barcelonès i Baix Llobregat -->
+                                <g class="cursor-pointer" onclick="handleCatSelect('cap_barcelona')">
+                                    <circle cx="372" cy="272" r="12" fill="#DC2626" stroke="white" stroke-width="2.5"/>
+                                    <text x="372" y="276" text-anchor="middle" font-size="11" fill="white" font-weight="bold">★</text>
+                                    <text x="435" y="276" text-anchor="start" font-size="11" font-weight="800" fill="#7F1D1D">Barcelona</text>
+                                </g>
+                                <!-- Tarragonès (Tarragona capital) -->
+                                <g class="cursor-pointer" onclick="handleCatSelect('cap_tarragona')">
+                                    <circle cx="242" cy="355" r="11" fill="#2563EB" stroke="white" stroke-width="2.5"/>
+                                    <text x="242" y="359" text-anchor="middle" font-size="10" fill="white" font-weight="bold">★</text>
+                                    <text x="292" y="362" text-anchor="start" font-size="11" font-weight="800" fill="#1E3A8A">Tarragona</text>
+                                </g>
+                            </g>
+
+                            <!-- ======================================= -->
+                            <!-- CAPA FÍSICA: RELLEU, RIUS I COSTES      -->
+                            <!-- ======================================= -->
+                            <g id="cat-group-fisic" class="hidden">
+                                <!-- Base verda de Catalunya -->
+                                <path d="M 95,48 L 155,42 L 235,68 L 275,72 L 380,90 L 485,82 L 515,125 L 485,185 L 435,225 L 365,285 L 315,315 L 245,365 L 185,405 L 165,455 L 125,445 L 135,395 L 85,355 L 90,260 L 65,220 L 82,135 Z"
+                                      fill="#DCFCE7" stroke="#16A34A" stroke-width="2.5" stroke-linejoin="round"/>
+
+                                <!-- Depressió Central -->
+                                <ellipse cx="185" cy="215" rx="75" ry="50" fill="#FEF08A" stroke="#CA8A04" stroke-width="1.5" stroke-dasharray="4 3" class="cursor-pointer" onclick="handleCatSelect('rel_depressio')"/>
+                                <text x="185" y="218" text-anchor="middle" font-size="11" font-weight="800" fill="#854D0E" pointer-events="none">Depressió Central</text>
+
+                                <!-- Pirineus (franja nord marró fosc + pics) -->
+                                <path class="map-region" onclick="handleCatSelect('rel_pirineus')"
+                                      d="M 95,52 L 155,46 L 235,72 L 380,94 L 465,88 L 450,115 L 350,115 L 220,98 L 105,85 Z"
+                                      fill="#B45309" stroke="#78350F" stroke-width="2"/>
+                                <polygon points="155,52 145,72 165,72" fill="#FFFFFF" pointer-events="none"/>
+                                <polygon points="210,68 200,88 220,88" fill="#FFFFFF" pointer-events="none"/>
+                                <polygon points="320,85 310,105 330,105" fill="#FFFFFF" pointer-events="none"/>
+                                <text x="275" y="106" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF" pointer-events="none">PIRINEUS</text>
+
+                                <!-- Prepirineus -->
+                                <path class="map-region" onclick="handleCatSelect('rel_prepirineus')"
+                                      d="M 105,88 L 220,102 L 350,118 L 430,120 L 415,142 L 325,140 L 205,128 L 110,115 Z"
+                                      fill="#D97706" stroke="#92400E" stroke-width="1.5"/>
+                                <text x="255" y="132" text-anchor="middle" font-size="10" font-weight="800" fill="#FFFBEB" pointer-events="none">Prepirineus</text>
+
+                                <!-- Serralada Prelitoral i Litoral -->
+                                <path class="map-region" onclick="handleCatSelect('rel_costaneres')"
+                                      d="M 385,175 L 420,210 L 345,275 L 265,320 L 185,375 L 165,355 L 245,295 L 320,245 Z"
+                                      fill="#F59E0B" stroke="#B45309" stroke-width="1.5"/>
+                                <text x="295" y="275" text-anchor="middle" font-size="10" font-weight="800" fill="#451A03" transform="rotate(-36 295 275)" pointer-events="none">Serralades Costaneres</text>
+
+                                <!-- RIUS PRINCIPALS -->
+                                <!-- Riu Segre -->
+                                <path class="cursor-pointer hover:stroke-blue-800" onclick="handleCatSelect('riu_segre')"
+                                      d="M 295,95 C 250,120 205,155 170,195 C 145,225 115,248 92,285"
+                                      fill="none" stroke="#0284C7" stroke-width="5" stroke-linecap="round"/>
+                                <text x="148" y="175" font-size="11" font-weight="800" fill="#0369A1" pointer-events="none">Riu Segre</text>
+
+                                <!-- Riu Ter -->
+                                <path class="cursor-pointer hover:stroke-blue-800" onclick="handleCatSelect('riu_ter')"
+                                      d="M 355,105 C 375,135 405,155 435,168 C 460,175 480,175 495,172"
+                                      fill="none" stroke="#0284C7" stroke-width="4.5" stroke-linecap="round"/>
+                                <text x="415" y="155" font-size="11" font-weight="800" fill="#0369A1" pointer-events="none">Riu Ter</text>
+
+                                <!-- Riu Llobregat -->
+                                <path class="cursor-pointer hover:stroke-blue-800" onclick="handleCatSelect('riu_llobregat')"
+                                      d="M 275,112 C 285,155 295,195 320,235 C 340,260 355,275 365,285"
+                                      fill="none" stroke="#0284C7" stroke-width="4.5" stroke-linecap="round"/>
+                                <text x="322" y="195" font-size="11" font-weight="800" fill="#0369A1" pointer-events="none">Riu Llobregat</text>
+
+                                <!-- Riu Ebre i Delta -->
+                                <path class="cursor-pointer hover:stroke-blue-800" onclick="handleCatSelect('riu_ebre')"
+                                      d="M 88,285 C 105,320 120,355 130,395 C 138,420 148,435 168,448"
+                                      fill="none" stroke="#0369A1" stroke-width="6.5" stroke-linecap="round"/>
+                                <text x="85" y="385" font-size="12" font-weight="800" fill="#075985" pointer-events="none">Riu Ebre</text>
+
+                                <!-- Pins Costes i Delta -->
+                                <g class="cursor-pointer" onclick="handleCatSelect('costa_brava')">
+                                    <circle cx="498" cy="145" r="11" fill="#0EA5E9" stroke="white" stroke-width="2"/>
+                                    <text x="514" y="149" font-size="11" font-weight="800" fill="#0369A1">Costa Brava</text>
+                                </g>
+                                <g class="cursor-pointer" onclick="handleCatSelect('costa_daurada')">
+                                    <circle cx="255" cy="365" r="11" fill="#F59E0B" stroke="white" stroke-width="2"/>
+                                    <text x="271" y="369" font-size="11" font-weight="800" fill="#B45309">Costa Daurada</text>
+                                </g>
+                                <g class="cursor-pointer" onclick="handleCatSelect('delta_ebre')">
+                                    <circle cx="168" cy="448" r="11" fill="#10B981" stroke="white" stroke-width="2" class="pulse-pin"/>
+                                    <text x="184" y="452" font-size="11" font-weight="800" fill="#065F46">Delta de l'Ebre</text>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2.5 text-center">
+                        💡 Fes clic sobre qualsevol regió, riu o icona del mapa per consultar-ne la fitxa!
+                    </p>
+                </div>
+
+                <!-- Fitxa Educativa Lateral (5 columnes) -->
+                <div class="lg:col-span-5 flex flex-col gap-4">
+                    <div id="cat-info-card" class="bg-white rounded-3xl p-6 shadow-md border-2 border-emerald-200 flex-grow flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <span id="cat-info-icon" class="w-14 h-14 rounded-2xl bg-emerald-100 text-3xl flex items-center justify-center shadow-sm">
+                                    🏔️
+                                </span>
+                                <div>
+                                    <span id="cat-info-category" class="text-xs font-extrabold uppercase tracking-wider text-emerald-700">
+                                        Explora Catalunya
+                                    </span>
+                                    <h3 id="cat-info-title" class="font-display font-bold text-2xl text-slate-900">
+                                        Selecciona un punt al mapa
+                                    </h3>
+                                </div>
+                            </div>
+
+                            <p id="cat-info-desc" class="text-slate-700 text-base leading-relaxed mb-4">
+                                Catalunya té una geografia molt variada: des de les altes muntanyes nevades dels Pirineus al nord fins a les planes fèrtils de l'interior i les costes banyades pel mar Mediterrani.
+                            </p>
+
+                            <!-- Dades ràpides -->
+                            <div id="cat-info-stats" class="grid grid-cols-2 gap-3 mb-4">
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                                    <span class="text-xs text-slate-500 font-bold block">Províncies</span>
+                                    <span class="font-display font-bold text-base text-slate-800">4 províncies</span>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                                    <span class="text-xs text-slate-500 font-bold block">Cim més alt</span>
+                                    <span class="font-display font-bold text-base text-slate-800">Pica d'Estats (3.143 m)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="cat-info-curiosity" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-950">
+                            <strong>✨ Sabies que...?</strong> Pots canviar entre el <strong>Mapa Polític</strong> i el <strong>Mapa Físic</strong> amb els botons de dalt per veure tant les divisions administratives com els rius i muntanyes.
+                        </div>
+                    </div>
+
+                    <!-- Caixa de retroacció del Mode Repte -->
+                    <div id="cat-challenge-feedback" class="hidden p-4 rounded-2xl font-bold text-sm text-center shadow-sm"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- SECCIÓ 3: MAPA D'EUROPA (FÍSIC I POLÍTIC)                 -->
+        <!-- ========================================================= -->
+        <section id="section-europa" class="hidden space-y-6 fade-in">
+            <!-- Capçalera i controls -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-sky-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 uppercase tracking-wider mb-1">Geografia d'Europa</span>
+                    <h2 class="font-display font-bold text-2xl sm:text-3xl text-slate-900">Mapa Interactiu d'Europa</h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Selector Capa -->
+                    <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                        <button onclick="setEurLayer('politic')" id="eur-layer-politic"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-amber-400 text-slate-900 shadow-sm transition cursor-pointer">
+                            🏛️ Països i Capitals
+                        </button>
+                        <button onclick="setEurLayer('fisic')" id="eur-layer-fisic"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                            🏔️ Relleu, Mars i Rius
+                        </button>
+                    </div>
+
+                    <!-- Selector Mode -->
+                    <div class="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+                        <button onclick="setEurMode('explora')" id="eur-mode-explora"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-sky-600 text-white shadow-sm transition cursor-pointer">
+                            🔍 Mode Explora
+                        </button>
+                        <button onclick="setEurMode('repte')" id="eur-mode-repte"
+                            class="px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer">
+                            🎯 Mode Repte
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra del Mode Repte d'Europa -->
+            <div id="eur-challenge-bar" class="hidden bg-gradient-to-r from-indigo-500 to-sky-600 rounded-2xl p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center text-2xl">🧭</span>
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-sky-100 block">Localitza al mapa d'Europa:</span>
+                        <p id="eur-challenge-target" class="font-display font-bold text-lg sm:text-xl text-white">
+                            Itàlia (capital: Roma)
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="bg-white/20 px-3.5 py-1.5 rounded-xl font-bold text-sm">
+                        Vides: <span id="eur-challenge-lives">❤️❤️❤️</span>
+                    </div>
+                    <div class="bg-white text-slate-900 px-3.5 py-1.5 rounded-xl font-bold text-sm">
+                        Punts: <span id="eur-challenge-score" class="text-indigo-700">0</span>
+                    </div>
+                    <button onclick="nextEurChallenge()" class="px-3.5 py-2 rounded-xl bg-amber-400 text-slate-900 font-bold text-xs hover:bg-amber-300 transition cursor-pointer">
+                        Següent ⏭️
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenidor Mapa SVG Europa + Fitxa Educativa -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Mapa SVG d'Europa (8 columnes) -->
+                <div class="lg:col-span-8 bg-white rounded-3xl p-4 sm:p-5 shadow-md border border-sky-100">
+                    <div class="w-full rounded-2xl overflow-hidden border-2 border-sky-200 bg-sky-200 relative">
+                        <svg id="svg-europa" viewBox="0 0 760 540" class="w-full h-auto select-none">
+                            <!-- Mars i Oceans -->
+                            <rect width="760" height="540" fill="#BAE6FD"/>
+
+                            <!-- Etiquetes d'aigua (clicables en capa física) -->
+                            <g id="eur-water-labels">
+                                <text x="95" y="210" font-family="Quicksand, sans-serif" font-weight="700" font-size="15" fill="#0369A1" text-anchor="middle" class="cursor-pointer" onclick="handleEurSelect('mar_atlantic')">Oceà Atlàntic</text>
+                                <text x="235" y="210" font-family="Quicksand, sans-serif" font-weight="700" font-size="12" fill="#0369A1" text-anchor="middle" class="cursor-pointer" onclick="handleEurSelect('mar_nord')">Mar del Nord</text>
+                                <text x="385" y="185" font-family="Quicksand, sans-serif" font-weight="700" font-size="12" fill="#0369A1" text-anchor="middle" transform="rotate(-35 385 185)" class="cursor-pointer" onclick="handleEurSelect('mar_baltica')">Mar Bàltica</text>
+                                <text x="320" y="485" font-family="Quicksand, sans-serif" font-weight="700" font-size="15" fill="#0369A1" text-anchor="middle" class="cursor-pointer" onclick="handleEurSelect('mar_mediterrania')">Mar Mediterrània</text>
+                                <text x="585" y="410" font-family="Quicksand, sans-serif" font-weight="700" font-size="13" fill="#0369A1" text-anchor="middle" class="cursor-pointer" onclick="handleEurSelect('mar_negra')">Mar Negra</text>
+                            </g>
+
+                            <!-- ======================================= -->
+                            <!-- CAPA POLÍTICA D'EUROPA                   -->
+                            <!-- ======================================= -->
+                            <g id="eur-group-politic">
+                                <!-- Portugal -->
+                                <path class="map-region" onclick="handleEurSelect('pais_portugal')"
+                                      d="M 85,375 L 112,375 L 108,448 L 82,445 Z"
+                                      fill="#86EFAC" stroke="#15803D" stroke-width="2"/>
+                                <!-- Espanya -->
+                                <path class="map-region" onclick="handleEurSelect('pais_espanya')"
+                                      d="M 112,368 L 195,375 L 185,435 L 135,458 L 108,448 Z"
+                                      fill="#FDE047" stroke="#A16207" stroke-width="2"/>
+                                <!-- Illes Balears -->
+                                <ellipse class="map-region" onclick="handleEurSelect('pais_espanya')" cx="212" cy="428" rx="10" ry="6" fill="#FDE047" stroke="#A16207" stroke-width="1.5"/>
+
+                                <!-- França -->
+                                <path class="map-region" onclick="handleEurSelect('pais_franca')"
+                                      d="M 185,295 L 265,275 L 295,320 L 275,375 L 195,375 L 175,335 Z"
+                                      fill="#93C5FD" stroke="#1D4ED8" stroke-width="2"/>
+                                <!-- Còrsega -->
+                                <ellipse cx="298" cy="395" rx="5" ry="9" fill="#93C5FD" stroke="#1D4ED8" stroke-width="1.5"/>
+
+                                <!-- Regne Unit (Gran Bretanya) -->
+                                <path class="map-region" onclick="handleEurSelect('pais_regne_unit')"
+                                      d="M 175,185 L 205,175 L 222,245 L 168,255 L 182,215 Z"
+                                      fill="#FCA5A5" stroke="#B91C1C" stroke-width="2"/>
+                                <!-- Irlanda -->
+                                <path class="map-region" onclick="handleEurSelect('pais_irlanda')"
+                                      d="M 135,205 L 162,200 L 160,238 L 132,235 Z"
+                                      fill="#6EE7B7" stroke="#047857" stroke-width="2"/>
+
+                                <!-- Alemanya -->
+                                <path class="map-region" onclick="handleEurSelect('pais_alemanya')"
+                                      d="M 285,225 L 355,225 L 365,295 L 295,305 L 275,265 Z"
+                                      fill="#FDBA74" stroke="#C2410C" stroke-width="2"/>
+
+                                <!-- Itàlia -->
+                                <path class="map-region" onclick="handleEurSelect('pais_italia')"
+                                      d="M 295,335 L 345,335 L 395,415 L 375,435 L 325,375 L 290,360 Z"
+                                      fill="#A7F3D0" stroke="#047857" stroke-width="2"/>
+                                <!-- Sicília i Sardenya -->
+                                <polygon class="map-region" onclick="handleEurSelect('pais_italia')" points="355,442 380,442 370,458" fill="#A7F3D0" stroke="#047857" stroke-width="1.5"/>
+                                <rect x="292" y="410" width="12" height="22" rx="4" fill="#A7F3D0" stroke="#047857" stroke-width="1.5"/>
+
+                                <!-- Polònia -->
+                                <path class="map-region" onclick="handleEurSelect('pais_polonia')"
+                                      d="M 358,220 L 442,220 L 448,282 L 365,285 Z"
+                                      fill="#F9A8D4" stroke="#BE185D" stroke-width="2"/>
+
+                                <!-- Ucraïna -->
+                                <path class="map-region" onclick="handleEurSelect('pais_ucraina')"
+                                      d="M 448,255 L 585,255 L 595,345 L 485,355 L 445,310 Z"
+                                      fill="#FEF08A" stroke="#CA8A04" stroke-width="2"/>
+
+                                <!-- Grècia -->
+                                <path class="map-region" onclick="handleEurSelect('pais_grecia')"
+                                      d="M 415,405 L 465,405 L 455,465 L 420,455 Z"
+                                      fill="#BAE6FD" stroke="#0369A1" stroke-width="2"/>
+
+                                <!-- Noruega -->
+                                <path class="map-region" onclick="handleEurSelect('pais_noruega')"
+                                      d="M 275,155 L 335,55 L 375,45 L 345,115 L 315,165 Z"
+                                      fill="#C4B5FD" stroke="#6D28D9" stroke-width="2"/>
+
+                                <!-- Suècia -->
+                                <path class="map-region" onclick="handleEurSelect('pais_suecia')"
+                                      d="M 320,165 L 350,105 L 395,75 L 385,165 L 345,190 Z"
+                                      fill="#FDE68A" stroke="#B45309" stroke-width="2"/>
+
+                                <!-- Resta d'Europa (context visual) -->
+                                <path d="M 395,75 L 455,75 L 445,155 L 395,155 Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+                                <path d="M 455,60 L 690,60 L 690,340 L 595,345 L 585,255 L 448,255 L 442,220 L 445,155 Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+                                <path d="M 365,285 L 448,282 L 485,355 L 465,405 L 415,405 L 365,355 Z" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+
+                                <!-- Etiquetes de Països i Punts de Capitals -->
+                                <g font-family="Nunito, sans-serif" font-weight="800" font-size="10.5" fill="#0F172A" pointer-events="none">
+                                    <text x="95" y="418" text-anchor="middle">Portugal</text>
+                                    <text x="148" y="412" text-anchor="middle">Espanya</text>
+                                    <text x="232" y="332" text-anchor="middle">França</text>
+                                    <text x="196" y="232" text-anchor="middle">R. Unit</text>
+                                    <text x="147" y="224" text-anchor="middle">Irlanda</text>
+                                    <text x="320" y="265" text-anchor="middle">Alemanya</text>
+                                    <text x="345" y="378" text-anchor="middle">Itàlia</text>
+                                    <text x="402" y="255" text-anchor="middle">Polònia</text>
+                                    <text x="520" y="302" text-anchor="middle">Ucraïna</text>
+                                    <text x="438" y="438" text-anchor="middle">Grècia</text>
+                                    <text x="305" y="125" text-anchor="middle">Noruega</text>
+                                    <text x="362" y="138" text-anchor="middle">Suècia</text>
+                                </g>
+                            </g>
+
+                            <!-- ======================================= -->
+                            <!-- CAPA FÍSICA D'EUROPA                    -->
+                            <!-- ======================================= -->
+                            <g id="eur-group-fisic" class="hidden">
+                                <!-- Silueta continental unificada en verd clar -->
+                                <path d="M 85,375 L 112,368 L 195,375 L 175,335 L 185,295 L 265,275 L 285,225 L 358,220 L 442,220 L 445,155 L 455,60 L 690,60 L 690,340 L 595,345 L 485,355 L 465,405 L 455,465 L 420,455 L 415,405 L 365,355 L 395,415 L 375,435 L 325,375 L 290,360 L 275,375 L 195,375 L 185,435 L 135,458 L 82,445 Z"
+                                      fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+                                <!-- Escandinàvia -->
+                                <path d="M 275,155 L 335,55 L 395,75 L 385,165 L 345,190 L 315,165 Z"
+                                      fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+                                <!-- Gran Bretanya i Irlanda -->
+                                <path d="M 175,185 L 205,175 L 222,245 L 168,255 Z" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+                                <path d="M 135,205 L 162,200 L 160,238 L 132,235 Z" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+
+                                <!-- SERRALADES MUNTANYOSES -->
+                                <!-- Pirineus -->
+                                <ellipse class="map-region" onclick="handleEurSelect('munt_pirineus')" cx="192" cy="374" rx="28" ry="8" fill="#B45309" stroke="#78350F" stroke-width="1.5"/>
+                                <text x="192" y="362" text-anchor="middle" font-size="10" font-weight="800" fill="#78350F">Pirineus</text>
+
+                                <!-- Alps -->
+                                <path class="map-region" onclick="handleEurSelect('munt_alps')"
+                                      d="M 275,325 Q 320,305 365,322 Q 335,342 280,338 Z"
+                                      fill="#92400E" stroke="#451A03" stroke-width="2"/>
+                                <text x="320" y="314" text-anchor="middle" font-size="11" font-weight="800" fill="#451A03">Alps</text>
+
+                                <!-- Apenins -->
+                                <path class="map-region" onclick="handleEurSelect('munt_apenins')"
+                                      d="M 325,355 L 378,415 L 368,422 L 315,362 Z"
+                                      fill="#D97706" stroke="#78350F" stroke-width="1.5"/>
+                                <text x="372" y="382" text-anchor="start" font-size="10" font-weight="800" fill="#78350F">Apenins</text>
+
+                                <!-- Carpats -->
+                                <path class="map-region" onclick="handleEurSelect('munt_carpats')"
+                                      d="M 415,295 Q 465,295 470,335 Q 450,350 430,345"
+                                      fill="none" stroke="#B45309" stroke-width="9" stroke-linecap="round"/>
+                                <text x="455" y="290" text-anchor="middle" font-size="10" font-weight="800" fill="#78350F">Carpats</text>
+
+                                <!-- Muntanyes Escandinaves -->
+                                <path class="map-region" onclick="handleEurSelect('munt_escandinaus')"
+                                      d="M 300,145 L 355,65 L 368,75 L 315,152 Z"
+                                      fill="#B45309" stroke="#78350F" stroke-width="1.5"/>
+                                <text x="275" y="100" text-anchor="end" font-size="10" font-weight="800" fill="#78350F">M. Escandinaus</text>
+
+                                <!-- Muntanyes Urals -->
+                                <rect class="map-region" onclick="handleEurSelect('munt_urals')" x="662" y="75" width="14" height="190" rx="6" fill="#92400E" stroke="#451A03" stroke-width="1.5"/>
+                                <text x="655" y="170" text-anchor="middle" font-size="11" font-weight="800" fill="#451A03" transform="rotate(-90 655 170)">Muntanyes Urals</text>
+
+                                <!-- RIUS PRINCIPALS -->
+                                <!-- Tàmesi -->
+                                <path class="cursor-pointer" onclick="handleEurSelect('riu_tamesi')" d="M 192,242 L 218,242" stroke="#0284C7" stroke-width="4" stroke-linecap="round"/>
+                                <text x="165" y="268" font-size="9.5" font-weight="800" fill="#0369A1">R. Tàmesi</text>
+
+                                <!-- Sena -->
+                                <path class="cursor-pointer" onclick="handleEurSelect('riu_sena')" d="M 248,318 L 210,295" stroke="#0284C7" stroke-width="4" stroke-linecap="round"/>
+                                <text x="225" y="292" font-size="9.5" font-weight="800" fill="#0369A1">R. Sena</text>
+
+                                <!-- Rin -->
+                                <path class="cursor-pointer" onclick="handleEurSelect('riu_rin')" d="M 305,315 L 282,245" stroke="#0284C7" stroke-width="4.5" stroke-linecap="round"/>
+                                <text x="276" y="268" text-anchor="end" font-size="10" font-weight="800" fill="#0369A1">R. Rin</text>
+
+                                <!-- Danubi -->
+                                <path class="cursor-pointer" onclick="handleEurSelect('riu_danubi')" d="M 325,305 C 375,312 425,335 485,358" fill="none" stroke="#0284C7" stroke-width="5" stroke-linecap="round"/>
+                                <text x="405" y="325" font-size="10.5" font-weight="800" fill="#0369A1">Riu Danubi</text>
+
+                                <!-- Volga -->
+                                <path class="cursor-pointer" onclick="handleEurSelect('riu_volga')" d="M 555,145 C 595,185 615,245 625,325" fill="none" stroke="#0369A1" stroke-width="5.5" stroke-linecap="round"/>
+                                <text x="580" y="220" font-size="11" font-weight="800" fill="#075985">Riu Volga</text>
+
+                                <!-- PENÍNSULES I ILLES DESTACADES (Pins clicables) -->
+                                <g class="cursor-pointer" onclick="handleEurSelect('pen_iberica')">
+                                    <circle cx="142" cy="412" r="10" fill="#F59E0B" stroke="white" stroke-width="2"/>
+                                    <text x="142" y="432" text-anchor="middle" font-size="9.5" font-weight="800" fill="#78350F">P. Ibèrica</text>
+                                </g>
+                                <g class="cursor-pointer" onclick="handleEurSelect('pen_italica')">
+                                    <circle cx="345" cy="395" r="10" fill="#F59E0B" stroke="white" stroke-width="2"/>
+                                    <text x="315" y="405" text-anchor="end" font-size="9.5" font-weight="800" fill="#78350F">P. Itàlica</text>
+                                </g>
+                                <g class="cursor-pointer" onclick="handleEurSelect('pen_escandinava')">
+                                    <circle cx="348" cy="135" r="10" fill="#F59E0B" stroke="white" stroke-width="2"/>
+                                    <text x="385" y="138" text-anchor="start" font-size="9.5" font-weight="800" fill="#78350F">P. Escandinava</text>
+                                </g>
+                                <g class="cursor-pointer" onclick="handleEurSelect('illa_balears')">
+                                    <circle cx="212" cy="428" r="9" fill="#10B981" stroke="white" stroke-width="2"/>
+                                    <text x="225" y="432" font-size="9.5" font-weight="800" fill="#065F46">I. Balears</text>
+                                </g>
+                                <g class="cursor-pointer" onclick="handleEurSelect('illa_sicilia')">
+                                    <circle cx="368" cy="448" r="9" fill="#10B981" stroke="white" stroke-width="2"/>
+                                    <text x="382" y="452" font-size="9.5" font-weight="800" fill="#065F46">Sicília</text>
+                                </g>
+                                <g class="cursor-pointer" onclick="handleEurSelect('illa_gran_bretanya')">
+                                    <circle cx="198" cy="215" r="10" fill="#10B981" stroke="white" stroke-width="2"/>
+                                    <text x="198" y="170" text-anchor="middle" font-size="9.5" font-weight="800" fill="#065F46">Gran Bretanya</text>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2.5 text-center">
+                        🌍 Alterna entre <strong>Països i Capitals</strong> i <strong>Relleu, Mars i Rius</strong> per descobrir tot el continent europeu!
+                    </p>
+                </div>
+
+                <!-- Fitxa Educativa d'Europa (4 columnes) -->
+                <div class="lg:col-span-4 flex flex-col gap-4">
+                    <div id="eur-info-card" class="bg-white rounded-3xl p-6 shadow-md border-2 border-indigo-200 flex-grow flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <span id="eur-info-icon" class="w-14 h-14 rounded-2xl bg-indigo-100 text-3xl flex items-center justify-center shadow-sm">
+                                    🌍
+                                </span>
+                                <div>
+                                    <span id="eur-info-category" class="text-xs font-extrabold uppercase tracking-wider text-indigo-700">
+                                        Explora Europa
+                                    </span>
+                                    <h3 id="eur-info-title" class="font-display font-bold text-2xl text-slate-900">
+                                        Toca un país o relleu
+                                    </h3>
+                                </div>
+                            </div>
+
+                            <p id="eur-info-desc" class="text-slate-700 text-base leading-relaxed mb-4">
+                                Europa és un continent situat a l'hemisferi Nord. Està envoltat per l'oceà Glacial Àrtic al nord, l'oceà Atlàntic a l'oest, el mar Mediterrani al sud i les muntanyes Urals a l'est.
+                            </p>
+
+                            <div id="eur-info-stats" class="grid grid-cols-1 gap-2.5 mb-4">
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex justify-between items-center">
+                                    <span class="text-xs text-slate-500 font-bold">Riu més llarg</span>
+                                    <span class="font-display font-bold text-sm text-slate-800">Riu Volga (3.530 km)</span>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex justify-between items-center">
+                                    <span class="text-xs text-slate-500 font-bold">Serralada central</span>
+                                    <span class="font-display font-bold text-sm text-slate-800">Els Alps (Mont Blanc)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="eur-info-curiosity" class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-sm text-indigo-950">
+                            <strong>💡 Pista per a 5è:</strong> Fixa't en la forma d'Itàlia: sembla una bota alta xutant una pilota (l'illa de Sicília)!
+                        </div>
+                    </div>
+
+                    <div id="eur-challenge-feedback" class="hidden p-4 rounded-2xl font-bold text-sm text-center shadow-sm"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- SECCIÓ 4: GRAN REPTE FINAL (QUIZ DE 15 PREGUNTES)         -->
+        <!-- ========================================================= -->
+        <section id="section-quiz" class="hidden max-w-3xl mx-auto fade-in">
+            <!-- Pantalla d'inici del Quiz -->
+            <div id="quiz-intro" class="bg-white rounded-3xl shadow-lg border border-amber-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 p-6 sm:p-8 text-slate-950">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-extrabold bg-white/90 text-amber-900 uppercase tracking-wider mb-2">
+                        Avaluació Final · 15 Preguntes
+                    </span>
+                    <h2 class="font-display font-bold text-2xl sm:text-4xl mb-2">
+                        El Gran Repte dels Exploradors
+                    </h2>
+                    <p class="text-slate-900 font-medium text-sm sm:text-base">
+                        Posa a prova tot el que has après sobre la Rosa dels Vents, Catalunya i Europa. Aconsegueix la medalla de <strong>Mestre Geògraf</strong>!
+                    </p>
+                </div>
+                <div class="p-6 sm:p-8 space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+                        <div class="p-4 rounded-2xl bg-sky-50 border border-sky-200">
+                            <span class="text-2xl block mb-1">🧭</span>
+                            <span class="font-display font-bold text-sm text-sky-900">Orientació</span>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                            <span class="text-2xl block mb-1">🏔️</span>
+                            <span class="font-display font-bold text-sm text-emerald-900">Catalunya</span>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-indigo-50 border border-indigo-200">
+                            <span class="text-2xl block mb-1">🌍</span>
+                            <span class="font-display font-bold text-sm text-indigo-900">Europa</span>
+                        </div>
+                    </div>
+
+                    <button onclick="startFinalQuiz()"
+                        class="w-full py-4 px-6 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-display font-bold text-lg sm:text-xl shadow-lg shadow-sky-600/25 transition flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Comença les 15 preguntes</span>
+                        <span>🚀</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pantalla de Pregunta Activa -->
+            <div id="quiz-active" class="hidden space-y-4">
+                <!-- Barra de progrés -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-sky-100">
+                    <div class="flex justify-between items-center text-sm font-bold mb-2">
+                        <span id="quiz-topic-tag" class="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs">Orientació</span>
+                        <span class="text-slate-600">Pregunta <span id="quiz-current-num">1</span> de 15</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="quiz-progress-bar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-500 transition-all duration-300" style="width: 6.6%"></div>
+                    </div>
+                </div>
+
+                <!-- Targeta de la pregunta -->
+                <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-sky-100">
+                    <h3 id="quiz-question-text" class="font-display font-bold text-xl sm:text-2xl text-slate-900 mb-6 leading-snug">
+                        Enunciat de la pregunta
+                    </h3>
+
+                    <div id="quiz-options-list" class="space-y-3">
+                        <!-- Opcions generades per JS -->
+                    </div>
+
+                    <!-- Caixa de retroacció -->
+                    <div id="quiz-feedback" class="hidden mt-6 p-4 sm:p-5 rounded-2xl border-2 text-sm sm:text-base leading-relaxed">
+                    </div>
+
+                    <div id="quiz-next-wrap" class="hidden mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                        <button onclick="nextFinalQuestion()" id="quiz-next-btn"
+                            class="px-6 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-display font-bold text-base shadow transition cursor-pointer">
+                            Següent pregunta →
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla Final de Resultats i Medalla -->
+            <div id="quiz-results" class="hidden bg-white rounded-3xl shadow-xl border border-amber-200 overflow-hidden text-center fade-in">
+                <div class="bg-gradient-to-br from-sky-600 via-indigo-600 to-emerald-600 p-8 text-white">
+                    <div id="final-medal-icon" class="w-24 h-24 mx-auto mb-4 rounded-3xl bg-amber-300 text-slate-900 flex items-center justify-center text-5xl shadow-lg border-4 border-white">
+                        🏅
+                    </div>
+                    <span class="inline-block px-3.5 py-1 rounded-full bg-white/20 text-xs font-extrabold uppercase tracking-wider mb-2">
+                        Rang aconseguit
+                    </span>
+                    <h2 id="final-rank-title" class="font-display font-bold text-3xl sm:text-4xl mb-2">
+                        Mestre Geògraf
+                    </h2>
+                    <p id="final-score-text" class="text-xl font-bold text-amber-200">
+                        Has encertat 14 de 15 preguntes!
+                    </p>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6">
+                    <p id="final-rank-desc" class="text-slate-700 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+                        Impressionant! Coneixes els mapes de Catalunya i d'Europa com un autèntic cartògraf professional.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button onclick="startFinalQuiz()"
+                            class="px-6 py-4 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-display font-bold text-base shadow-md transition cursor-pointer">
+                            🔄 Torna a fer el Gran Repte
+                        </button>
+                        <button onclick="switchTab('catalunya')"
+                            class="px-6 py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-display font-bold text-base transition cursor-pointer">
+                            🗺️ Torna als Mapes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- PEU DE PÀGINA -->
+    <footer class="bg-white/80 border-t border-sky-100 py-4 px-4 text-center text-xs text-slate-500">
+        <strong>Exploradors de Mapes: Catalunya i Europa</strong> · Recurs interactiu de Coneixement del Medi (5è de Primària)
+    </footer>
+
+    <script>
+        // =========================================================================
+        // ESTAT GLOBAL I ESTRELLES
+        // =========================================================================
+        let totalStars = 0;
+
+        function addStars(amount) {
+            totalStars += amount;
+            document.getElementById('total-stars-desktop').textContent = totalStars;
+            document.getElementById('total-stars-mobile').textContent = totalStars;
+        }
+
+        // Navegació entre pestanyes
+        function switchTab(tabId) {
+            const sections = ['orientacio', 'catalunya', 'europa', 'quiz'];
+            sections.forEach(sec => {
+                document.getElementById(`section-${sec}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${sec}`);
+                if (sec === 'quiz') {
+                    btn.className = "nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300 cursor-pointer";
+                } else {
+                    btn.className = "nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-sky-50 hover:text-sky-700 cursor-pointer";
+                }
+            });
+
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (tabId === 'quiz') {
+                activeBtn.className = "nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25 cursor-pointer";
+            } else {
+                activeBtn.className = "nav-tab flex-shrink-0 px-3.5 py-2.5 rounded-xl font-display font-bold text-sm sm:text-base transition flex items-center gap-2 bg-sky-600 text-white shadow-md shadow-sky-600/20 cursor-pointer";
+            }
+        }
+
+        // =========================================================================
+        // SECCIÓ 1: ORIENTACIÓ I ROSA DELS VENTS
+        // =========================================================================
+        const COMPASS_DATA = {
+            N: { badge: "N", color: "bg-red-500", type: "Punt Cardinal Principal", title: "Nord (N)", desc: "És el punt cardinal principal de referència. Als mapes, el Nord sempre queda a la part de <strong>dalt</strong>. L'agulla imantada de la brúixola sempre apunta cap al Nord magnètic.", example: "Els <strong>Pirineus</strong> es troben al <strong>Nord</strong> de Catalunya." },
+            S: { badge: "S", color: "bg-sky-600", type: "Punt Cardinal Principal", title: "Sud (S)", desc: "És el punt oposat al Nord. Als mapes queda a la part de <strong>baix</strong>. Al migdia, el Sol es troba en direcció Sud.", example: "El <strong>Delta de l'Ebre</strong> i les Terres de l'Ebre es troben al <strong>Sud</strong> de Catalunya." },
+            E: { badge: "E", color: "bg-emerald-500", type: "Punt Cardinal Principal", title: "Est (E)", desc: "És el punt per on <strong>surt el Sol</strong> cada matí (també anomenat Llevant). Als mapes queda a la <strong>dreta</strong>.", example: "El <strong>Mar Mediterrani</strong> banya tota la costa <strong>Est</strong> de Catalunya." },
+            O: { badge: "O", color: "bg-violet-500", type: "Punt Cardinal Principal", title: "Oest (O)", desc: "És el punt per on es <strong>pon el Sol</strong> al vespre (també anomenat Ponent). Als mapes queda a l'<strong>esquerra</strong>.", example: "Les terres de <strong>Lleida</strong> es troben a l'<strong>Oest</strong> de Catalunya (per això en diem les Terres de Ponent!)." },
+            NE: { badge: "NE", color: "bg-amber-500", type: "Punt Col·lateral (Intermedi)", title: "Nord-est (NE)", desc: "Es troba just al mig entre el <strong>Nord</strong> i l'<strong>Est</strong> (a dalt a la dreta del mapa).", example: "Des de Barcelona, <strong>Girona</strong> i el Cap de Creus queden cap al <strong>Nord-est</strong>." },
+            SE: { badge: "SE", color: "bg-amber-500", type: "Punt Col·lateral (Intermedi)", title: "Sud-est (SE)", desc: "Es troba just al mig entre el <strong>Sud</strong> i l'<strong>Est</strong> (a baix a la dreta del mapa).", example: "Si sortim de Barcelona en vaixell cap a les <strong>Illes Balears</strong>, naveguem cap al <strong>Sud-est</strong>." },
+            SO: { badge: "SO", color: "bg-amber-500", type: "Punt Col·lateral (Intermedi)", title: "Sud-oest (SO)", desc: "Es troba just al mig entre el <strong>Sud</strong> i l'<strong>Oest</strong> (a baix a l'esquerra del mapa).", example: "Des de Barcelona, <strong>Tarragona</strong> queda seguint la costa cap al <strong>Sud-oest</strong>." },
+            NO: { badge: "NO", color: "bg-amber-500", type: "Punt Col·lateral (Intermedi)", title: "Nord-oest (NO)", desc: "Es troba just al mig entre el <strong>Nord</strong> i l'<strong>Oest</strong> (a dalt a l'esquerra del mapa).", example: "La <strong>Vall d'Aran</strong> (Vielha) és la comarca situada més al <strong>Nord-oest</strong> de Catalunya." }
+        };
+
+        const MAP_TOOLS_DATA = {
+            parallels: "<strong>Paral·lels:</strong> Són línies imaginàries horitzontals que envolten la Terra d'Est a Oest. El paral·lel principal és l'<strong>Equador</strong> (0°), que divideix el planeta en l'hemisferi Nord i l'hemisferi Sud. Serveixen per mesurar la <em>latitud</em>.",
+            meridians: "<strong>Meridians:</strong> Són semicercles imaginaris verticals que van del Pol Nord al Pol Sud. El meridià principal és el <strong>Meridià de Greenwich</strong> (0°), que passa molt a prop de Catalunya! Serveixen per mesurar la <em>longitud</em>.",
+            escala: "<strong>Escala:</strong> Ens indica quantes vegades s'ha reduït la realitat per dibuixar-la al mapa. Per exemple, una escala <strong>1:100.000</strong> vol dir que 1 cm al mapa equival a 100.000 cm (1 km) a la realitat.",
+            llegenda: "<strong>Llegenda:</strong> És el quadre explicatiu del mapa on s'indica què significa cada color, línia o símbol (per exemple: blau per als rius, marró per a les muntanyes, estrelles per a les capitals)."
+        };
+
+        function selectCompassPoint(pt) {
+            const d = COMPASS_DATA[pt];
+            const badge = document.getElementById('compass-info-badge');
+            badge.textContent = d.badge;
+            badge.className = `w-12 h-12 rounded-2xl ${d.color} text-white font-display font-bold text-xl flex items-center justify-center shadow-sm`;
+            document.getElementById('compass-info-type').textContent = d.type;
+            document.getElementById('compass-info-title').textContent = d.title;
+            document.getElementById('compass-info-desc').innerHTML = d.desc;
+            document.querySelector('#compass-info-card div.bg-sky-50').innerHTML = `<strong>💡 Exemple a Catalunya:</strong> ${d.example}`;
+        }
+
+        function selectMapTool(tool) {
+            document.querySelectorAll('.map-tool-btn').forEach(btn => {
+                if (btn.dataset.tool === tool) {
+                    btn.className = "map-tool-btn p-3 rounded-2xl border-2 border-sky-500 bg-sky-50 text-left font-bold text-sm text-sky-900 transition cursor-pointer";
+                } else {
+                    btn.className = "map-tool-btn p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-sky-300 text-left font-bold text-sm text-slate-700 transition cursor-pointer";
+                }
+            });
+            document.getElementById('map-tool-detail').innerHTML = MAP_TOOLS_DATA[tool];
+        }
+
+        // Mini-joc d'orientació
+        const ORI_QUESTIONS = [
+            { q: "Des de Barcelona, cap a quina direcció queda Girona?", ans: "NE", x1: 325, y1: 215, x2: 390, y2: 125, exp: "Correcte! Girona està més amunt (Nord) i més a la dreta (Est) que Barcelona: al Nord-est (NE)." },
+            { q: "Si ets a Manresa (al centre) i viatges cap a Lleida, cap on vas?", ans: "O", x1: 265, y1: 175, x2: 120, y2: 205, exp: "Molt bé! Lleida es troba a l'Oest (esquerra del mapa), per això s'anomenen les Terres de Ponent." },
+            { q: "Des de Manresa, cap a quina direcció queden els Pirineus?", ans: "N", x1: 265, y1: 175, x2: 265, y2: 85, exp: "Exacte! Els Pirineus són just al Nord (part superior del mapa)." },
+            { q: "Des de Barcelona, cap a on queda Tarragona seguint la costa?", ans: "SO", x1: 325, y1: 215, x2: 225, y2: 265, exp: "Genial! Tarragona està més avall (Sud) i més a l'esquerra (Oest): al Sud-oest (SO)." },
+            { q: "Si ets a Lleida i puges fins a Vielha (Vall d'Aran), cap a on et mous?", ans: "N", x1: 120, y1: 205, x2: 115, y2: 62, exp: "Molt ben vist! Vielha queda gairebé en línia recta cap al Nord des de Lleida." },
+            { q: "Des de Girona, cap a on queda el Delta de l'Ebre?", ans: "SO", x1: 390, y1: 125, x2: 125, y2: 330, exp: "Excel·lent! El Delta de l'Ebre és a l'extrem baix a l'esquerra respecte a Girona: al Sud-oest (SO)." }
+        ];
+        let oriIndex = 0;
+        let oriScore = 0;
+        let oriAnswered = false;
+
+        function setOrientacioMode(mode) {
+            const btnExp = document.getElementById('ori-mode-explora');
+            const btnJoc = document.getElementById('ori-mode-joc');
+            const viewExp = document.getElementById('orientacio-explora-view');
+            const viewJoc = document.getElementById('orientacio-joc-view');
+
+            if (mode === 'explora') {
+                btnExp.className = "px-4 py-2 rounded-xl font-display font-bold text-sm bg-white text-sky-700 shadow-sm transition cursor-pointer";
+                btnJoc.className = "px-4 py-2 rounded-xl font-display font-bold text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+                viewExp.classList.remove('hidden');
+                viewJoc.classList.add('hidden');
+            } else {
+                btnJoc.className = "px-4 py-2 rounded-xl font-display font-bold text-sm bg-white text-sky-700 shadow-sm transition cursor-pointer";
+                btnExp.className = "px-4 py-2 rounded-xl font-display font-bold text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+                viewExp.classList.add('hidden');
+                viewJoc.classList.remove('hidden');
+                oriIndex = 0;
+                oriScore = 0;
+                document.getElementById('ori-score').textContent = "0";
+                renderOriQuestion();
+            }
+        }
+
+        function renderOriQuestion() {
+            oriAnswered = false;
+            const q = ORI_QUESTIONS[oriIndex];
+            document.getElementById('ori-q-num').textContent = oriIndex + 1;
+            document.getElementById('ori-question-text').textContent = q.q;
+            document.getElementById('ori-feedback').classList.add('hidden');
+            document.getElementById('ori-next-btn').classList.add('hidden');
+            document.getElementById('ori-guide-line').classList.add('hidden');
+
+            document.querySelectorAll('.ori-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.className = "ori-btn p-3 rounded-xl border-2 border-slate-200 hover:border-sky-500 font-bold text-sm text-slate-800 transition cursor-pointer";
+            });
+        }
+
+        function checkOrientacioAnswer(choice) {
+            if (oriAnswered) return;
+            oriAnswered = true;
+            const q = ORI_QUESTIONS[oriIndex];
+            const fb = document.getElementById('ori-feedback');
+            const line = document.getElementById('ori-guide-line');
+
+            // Dibuixar línia guia al mapa
+            line.setAttribute('x1', q.x1);
+            line.setAttribute('y1', q.y1);
+            line.setAttribute('x2', q.x2);
+            line.setAttribute('y2', q.y2);
+            line.classList.remove('hidden');
+
+            document.querySelectorAll('.ori-btn').forEach(btn => btn.disabled = true);
+
+            if (choice === q.ans) {
+                oriScore++;
+                addStars(1);
+                document.getElementById('ori-score').textContent = oriScore;
+                fb.className = "mt-4 p-4 rounded-2xl text-sm font-medium leading-relaxed bg-emerald-50 border border-emerald-300 text-emerald-950";
+                fb.innerHTML = `✅ <strong>Molt bé! (+1 ⭐)</strong> ${q.exp}`;
+            } else {
+                fb.className = "mt-4 p-4 rounded-2xl text-sm font-medium leading-relaxed bg-amber-50 border border-amber-300 text-amber-950";
+                fb.innerHTML = `❌ <strong>No ben bé!</strong> La resposta correcta era <strong>${q.ans}</strong>. ${q.exp}`;
+            }
+            fb.classList.remove('hidden');
+            const nextBtn = document.getElementById('ori-next-btn');
+            nextBtn.textContent = oriIndex < ORI_QUESTIONS.length - 1 ? "Següent repte →" : "Torna a jugar 🔄";
+            nextBtn.classList.remove('hidden');
+        }
+
+        function nextOrientacioQuestion() {
+            oriIndex = (oriIndex + 1) % ORI_QUESTIONS.length;
+            if (oriIndex === 0) {
+                oriScore = 0;
+                document.getElementById('ori-score').textContent = "0";
+            }
+            renderOriQuestion();
+        }
+
+        // =========================================================================
+        // SECCIÓ 2: MAPA DE CATALUNYA
+        // =========================================================================
+        const CAT_ITEMS = {
+            // Polític
+            prov_lleida: { layer: 'politic', icon: '🌾', cat: 'Província (Polític)', title: 'Província de Lleida', desc: 'És la província més extensa de Catalunya i l\'única que no té costa. S\'estén des dels alts cims dels Pirineus fins a la plana fèrtil de la Depressió Central.', stat1: ['Capital', 'Lleida'], stat2: ['Comarques', '13 comarques'], cur: 'És famosa per la producció de fruita dolça (peres, pomes, préssecs) i pel parc nacional d\'Aigüestortes.' },
+            prov_girona: { layer: 'politic', icon: '🌲', cat: 'Província (Polític)', title: 'Província de Girona', desc: 'Situada al nord-est de Catalunya. Combina els Pirineus orientals, la zona volcànica de la Garrotxa i les cales rocoses de la Costa Brava.', stat1: ['Capital', 'Girona'], stat2: ['Comarques', '8 comarques'], cur: 'Al Cap de Creus (Alt Empordà) es troba el punt més oriental de tota la península Ibèrica.' },
+            prov_barcelona: { layer: 'politic', icon: '🏙️', cat: 'Província (Polític)', title: 'Província de Barcelona', desc: 'És la província més poblada de Catalunya. Concentra la major part de la població, la indústria i els serveis al voltant de l\'àrea metropolitana.', stat1: ['Capital', 'Barcelona'], stat2: ['Comarques', '13 comarques'], cur: 'Hi trobem muntanyes molt emblemàtiques com Montserrat, el Montseny i Sant Llorenç del Munt.' },
+            prov_tarragona: { layer: 'politic', icon: '🏛️', cat: 'Província (Polític)', title: 'Província de Tarragona', desc: 'Situada al sud de Catalunya, banyada per la Costa Daurada i travessada pel tram final del riu Ebre.', stat1: ['Capital', 'Tarragona'], stat2: ['Comarques', '10 comarques'], cur: 'La ciutat de Tarragona va ser l\'antiga Tàrraco romana i conserva un amfiteatre davant del mar.' },
+            com_aran: { layer: 'politic', icon: '❄️', cat: 'Comarca Destacada', title: 'La Vall d\'Aran', desc: 'Comarca pirinenca situada al nord-oest. És l\'única comarca de Catalunya que pertany al vessant atlàntic (el riu Garona desemboca a l\'oceà Atlàntic).', stat1: ['Capital', 'Vielha'], stat2: ['Llengua pròpia', 'Aranès (occità)'], cur: 'A la Vall d\'Aran es parlen tres llengües oficials: l\'aranès, el català i el castellà!' },
+            com_emporda: { layer: 'politic', icon: '💨', cat: 'Comarca Destacada', title: 'L\'Alt Empordà', desc: 'Comarca situada a l\'extrem nord-est, fent frontera amb França i banyada pel golf de Roses i la Costa Brava.', stat1: ['Capital', 'Figueres'], stat2: ['Vent típic', 'La Tramuntana'], cur: 'A Figueres va néixer el famós pintor Salvador Dalí i s\'hi troba el seu Teatre-Museu.' },
+            cap_lleida: { layer: 'politic', icon: '🏰', cat: 'Capital i Comarca', title: 'Lleida (El Segrià)', desc: 'Lleida és la capital de la província i de la comarca del Segrià. Està travessada pel riu Segre.', stat1: ['Riu', 'Riu Segre'], stat2: ['Monument', 'La Seu Vella'], cur: 'La Seu Vella s\'alça sobre un turó al mig de la ciutat i es veu des de molts quilòmetres lluny.' },
+            cap_girona: { layer: 'politic', icon: '🌉', cat: 'Capital i Comarca', title: 'Girona (El Gironès)', desc: 'Capital de la província de Girona, famosa per les cases penjades de colors sobre el riu Onyar i el seu barri vell.', stat1: ['Rius', 'Ter i Onyar'], stat2: ['Comarca', 'El Gironès'], cur: 'Cada primavera celebra l\'esdeveniment "Girona, Temps de Flors", omplint els carrers de flors.' },
+            cap_barcelona: { layer: 'politic', icon: '⛪', cat: 'Capital de Catalunya', title: 'Barcelona (El Barcelonès)', desc: 'És la capital de Catalunya i una de les ciutats més importants del Mediterrani. Just al costat hi ha la comarca del Baix Llobregat.', stat1: ['Rius', 'Besòs i Llobregat'], stat2: ['Comarca', 'El Barcelonès'], cur: 'És mundialment coneguda per l\'arquitectura modernista d\'Antoni Gaudí, com la Sagrada Família i el Park Güell.' },
+            cap_tarragona: { layer: 'politic', icon: '🏟️', cat: 'Capital i Comarca', title: 'Tarragona (El Tarragonès)', desc: 'Capital de la província de Tarragona, amb un dels ports comercials més importants del Mediterrani.', stat1: ['Costa', 'Costa Daurada'], stat2: ['Comarca', 'El Tarragonès'], cur: 'El seu conjunt arqueològic romà és Patrimoni de la Humanitat per la UNESCO.' },
+
+            // Físic
+            rel_pirineus: { layer: 'fisic', icon: '🏔️', cat: 'Unitat de Relleu', title: 'Els Pirineus', desc: 'Serralada molt alta i escarpada que s\'estén al nord de Catalunya d\'oest a est. Separa la península Ibèrica de la resta d\'Europa.', stat1: ['Cim més alt', 'Pica d\'Estats (3.143 m)'], stat2: ['Clima', 'D\'alta muntanya'], cur: 'Hi neixen la majoria dels rius catalans més importants, com el Segre, el Ter i el Llobregat.' },
+            rel_prepirineus: { layer: 'fisic', icon: '⛰️', cat: 'Unitat de Relleu', title: 'Els Prepirineus', desc: 'Conjunt de serralades situades just al sud dels Pirineus i paral·leles a aquests, però d\'altitud més baixa (com la serra del Cadí o el Pedraforca).', stat1: ['Muntanya icònica', 'Pedraforca (2.506 m)'], stat2: ['Situació', 'Al sud dels Pirineus'], cur: 'El Pedraforca té una forma única de forca amb dos cims separats per un coll (l\'Enforcadura).' },
+            rel_depressio: { layer: 'fisic', icon: '🌻', cat: 'Unitat de Relleu', title: 'La Depressió Central', desc: 'És una gran plana situada al centre i a l\'oest de Catalunya, envoltada pels Pirineus al nord i les Serralades Costaneres al sud-est.', stat1: ['Relleu', 'Plana i altiplans'], stat2: ['Activitat', 'Agricultura i ramaderia'], cur: 'Gràcies als canals de regadiu com el Canal d\'Urgell, és el gran hort de fruita i cereals de Catalunya.' },
+            rel_costaneres: { layer: 'fisic', icon: '🥾', cat: 'Unitat de Relleu', title: 'Serralades Costaneres', desc: 'Formats per la Serralada Prelitoral (més alta, amb el Montseny i Montserrat) i la Serralada Litoral (més baixa i arran de mar, com Collserola).', stat1: ['Cim més alt', 'Turó de l\'Home (1.706 m)'], stat2: ['Orientació', 'Paral·leles a la costa'], cur: 'Entre totes dues serralades hi ha una plana allargada molt poblada anomenada Depressió Prelitoral.' },
+            riu_ebre: { layer: 'fisic', icon: '🌊', cat: 'Riu Principal', title: 'El riu Ebre', desc: 'És el riu més cabalós de Catalunya i de tota la península Ibèrica. Neix a Cantàbria i desemboca al mar Mediterrani formant un gran delta.', stat1: ['Longitud total', '930 km'], stat2: ['Desembocadura', 'Delta de l\'Ebre'], cur: 'A diferència d\'altres rius mediterranis, porta molta aigua tot l\'any perquè rep afluents dels Pirineus.' },
+            riu_segre: { layer: 'fisic', icon: '💧', cat: 'Riu Principal', title: 'El riu Segre', desc: 'És el riu més llarg que passa per Catalunya. Neix als Pirineus (Cerdanya) i desemboca al riu Ebre a Mequinensa (és el seu afluent principal).', stat1: ['Longitud', '265 km'], stat2: ['Passa per', 'La Seu d\'Urgell i Lleida'], cur: 'El Segre no desemboca directament al mar, sinó que aporta les seves aigües al riu Ebre.' },
+            riu_llobregat: { layer: 'fisic', icon: '🏞️', cat: 'Riu Principal', title: 'El riu Llobregat', desc: 'Neix a les Fonts del Llobregat (Castellar de n\'Hug, al Berguedà) i desemboca al mar Mediterrani, just al sud de Barcelona.', stat1: ['Longitud', '170 km'], stat2: ['Naixement', 'Castellar de n\'Hug'], cur: 'Al segle XIX es van construir moltes colònies tèxtils al seu costat per aprofitar la força de l\'aigua.' },
+            riu_ter: { layer: 'fisic', icon: '🦆', cat: 'Riu Principal', title: 'El riu Ter', desc: 'Neix als Pirineus (Ulldeter) i travessa les comarques de Girona fins a desembocar al mar Mediterrani, a l\'Estartit (Baix Empordà).', stat1: ['Longitud', '208 km'], stat2: ['Passa per', 'Ripoll, Vic i Girona'], cur: 'A prop de la seva desembocadura hi ha les Illes Medes, una reserva marina espectacular.' },
+            costa_brava: { layer: 'fisic', icon: '⛵', cat: 'Costa Catalana', title: 'La Costa Brava', desc: 'Comprèn el litoral de la província de Girona (des de Blanes fins a Portbou). És una costa alta, rocosa i molt retallada, plena de cales i penya-segats.', stat1: ['Província', 'Girona'], stat2: ['Característica', 'Rocosa amb cales'], cur: 'El seu nom es deu a l\'aspecte feréstec i rocós on trenquen les onades del mar.' },
+            costa_daurada: { layer: 'fisic', icon: '🏖️', cat: 'Costa Catalana', title: 'La Costa Daurada', desc: 'Comprèn el litoral de la província de Tarragona. Es caracteritza per tenir platges llargues, planes i de sorra molt fina.', stat1: ['Província', 'Tarragona'], stat2: ['Característica', 'Platges llargues de sorra'], cur: 'S\'anomena "Daurada" pel color groc daurat que agafa la seva sorra fina quan hi toca el sol.' },
+            delta_ebre: { layer: 'fisic', icon: '🦩', cat: 'Espai Natural', title: 'El Delta de l\'Ebre', desc: 'És la zona humida més gran de Catalunya, formada pels sediments (terra i sorra) que el riu Ebre ha anat dipositant durant milers d\'anys en arribar al mar.', stat1: ['Superfície', '320 km²'], stat2: ['Cultiu estrella', 'L\'arròs'], cur: 'És un paradís per a milers d\'aus aquàtiques com els flamencs rosats!' }
+        };
+
+        let catCurrentLayer = 'politic';
+        let catCurrentMode = 'explora';
+        let catChallengeTargetKey = null;
+        let catChallengeScore = 0;
+
+        function setCatLayer(layer) {
+            catCurrentLayer = layer;
+            document.getElementById('cat-layer-politic').className = layer === 'politic'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-amber-400 text-slate-900 shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+            document.getElementById('cat-layer-fisic').className = layer === 'fisic'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-emerald-500 text-white shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+
+            document.getElementById('cat-group-politic').classList.toggle('hidden', layer !== 'politic');
+            document.getElementById('cat-group-fisic').classList.toggle('hidden', layer !== 'fisic');
+
+            if (catCurrentMode === 'repte') {
+                nextCatChallenge();
+            }
+        }
+
+        function setCatMode(mode) {
+            catCurrentMode = mode;
+            document.getElementById('cat-mode-explora').className = mode === 'explora'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-sky-600 text-white shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+            document.getElementById('cat-mode-repte').className = mode === 'repte'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-amber-500 text-slate-950 shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+
+            document.getElementById('cat-challenge-bar').classList.toggle('hidden', mode !== 'repte');
+            document.getElementById('cat-challenge-feedback').classList.add('hidden');
+
+            if (mode === 'repte') {
+                catChallengeScore = 0;
+                document.getElementById('cat-challenge-score').textContent = "0";
+                nextCatChallenge();
+            }
+        }
+
+        function nextCatChallenge() {
+            const keys = Object.keys(CAT_ITEMS).filter(k => CAT_ITEMS[k].layer === catCurrentLayer);
+            let randomKey = keys[Math.floor(Math.random() * keys.length)];
+            if (randomKey === catChallengeTargetKey && keys.length > 1) {
+                randomKey = keys[(keys.indexOf(randomKey) + 1) % keys.length];
+            }
+            catChallengeTargetKey = randomKey;
+            document.getElementById('cat-challenge-target').textContent = CAT_ITEMS[randomKey].title;
+            document.getElementById('cat-challenge-feedback').classList.add('hidden');
+        }
+
+        function handleCatSelect(key) {
+            const item = CAT_ITEMS[key];
+            if (!item) return;
+
+            // Actualitzar fitxa educativa sempre
+            document.getElementById('cat-info-icon').textContent = item.icon;
+            document.getElementById('cat-info-category').textContent = item.cat;
+            document.getElementById('cat-info-title').textContent = item.title;
+            document.getElementById('cat-info-desc').textContent = item.desc;
+            document.getElementById('cat-info-stats').innerHTML = `
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                    <span class="text-xs text-slate-500 font-bold block">${item.stat1[0]}</span>
+                    <span class="font-display font-bold text-sm sm:text-base text-slate-800">${item.stat1[1]}</span>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                    <span class="text-xs text-slate-500 font-bold block">${item.stat2[0]}</span>
+                    <span class="font-display font-bold text-sm sm:text-base text-slate-800">${item.stat2[1]}</span>
+                </div>
+            `;
+            document.getElementById('cat-info-curiosity').innerHTML = `<strong>✨ Sabies que...?</strong> ${item.cur}`;
+
+            // Si estem en Mode Repte, comprovar encert
+            if (catCurrentMode === 'repte' && catChallengeTargetKey) {
+                const fb = document.getElementById('cat-challenge-feedback');
+                fb.classList.remove('hidden');
+                if (key === catChallengeTargetKey) {
+                    catChallengeScore++;
+                    addStars(1);
+                    document.getElementById('cat-challenge-score').textContent = catChallengeScore;
+                    fb.className = "p-4 rounded-2xl font-bold text-sm text-center shadow-sm bg-emerald-100 border-2 border-emerald-400 text-emerald-950";
+                    fb.textContent = `🎉 Fantàstic! Has trobat "${item.title}" (+1 ⭐). Buscant següent repte...`;
+                    setTimeout(() => {
+                        if (catCurrentMode === 'repte') nextCatChallenge();
+                    }, 1600);
+                } else {
+                    fb.className = "p-4 rounded-2xl font-bold text-sm text-center shadow-sm bg-rose-100 border-2 border-rose-300 text-rose-950";
+                    fb.textContent = `❌ Has clicat "${item.title}". Torna-ho a provar per trobar "${CAT_ITEMS[catChallengeTargetKey].title}"!`;
+                }
+            }
+        }
+
+        // =========================================================================
+        // SECCIÓ 3: MAPA D'EUROPA
+        // =========================================================================
+        const EUR_ITEMS = {
+            // Països (Polític)
+            pais_espanya: { layer: 'politic', icon: '🇪🇸', cat: 'País d\'Europa', title: 'Espanya (Capital: Madrid)', desc: 'Ocupa la major part de la península Ibèrica, al sud-oest d\'Europa, a més de les Illes Balears, les Illes Canàries, Ceuta i Melilla.', stat1: ['Capital', 'Madrid'], stat2: ['Península', 'Península Ibèrica'], cur: 'Catalunya es troba al nord-est d\'Espanya, fent frontera amb França i Andorra.' },
+            pais_portugal: { layer: 'politic', icon: '🇵🇹', cat: 'País d\'Europa', title: 'Portugal (Capital: Lisboa)', desc: 'Situat a l\'extrem occidental de la península Ibèrica, obert completament a l\'oceà Atlàntic.', stat1: ['Capital', 'Lisboa'], stat2: ['Oceà', 'Oceà Atlàntic'], cur: 'Lisboa és coneguda com la ciutat dels set turons i dels famosos tramvies grocs.' },
+            pais_franca: { layer: 'politic', icon: '🇫🇷', cat: 'País d\'Europa', title: 'França (Capital: París)', desc: 'Un dels països més grans d\'Europa occidental. Té costa tant a l\'oceà Atlàntic com al mar Mediterrani.', stat1: ['Capital', 'París'], stat2: ['Riu destacat', 'El Sena'], cur: 'A París hi ha la Torre Eiffel, construïda l\'any 1889 amb ferro i de 330 metres d\'alçada.' },
+            pais_italia: { layer: 'politic', icon: '🇮🇹', cat: 'País d\'Europa', title: 'Itàlia (Capital: Roma)', desc: 'País situat al sud d\'Europa format per una península allargada en forma de bota i dues grans illes: Sicília i Sardenya.', stat1: ['Capital', 'Roma'], stat2: ['Serralada', 'Alps i Apenins'], cur: 'Dins de la ciutat de Roma es troba l\'estat més petit del món: la Ciutat del Vaticà.' },
+            pais_alemanya: { layer: 'politic', icon: '🇩🇪', cat: 'País d\'Europa', title: 'Alemanya (Capital: Berlín)', desc: 'Situada al centre d\'Europa, és el país més poblat de la Unió Europea i un gran motor industrial.', stat1: ['Capital', 'Berlín'], stat2: ['Riu destacat', 'El Rin'], cur: 'Alemanya limita amb 9 països diferents!' },
+            pais_regne_unit: { layer: 'politic', icon: '🇬🇧', cat: 'País d\'Europa', title: 'Regne Unit (Capital: Londres)', desc: 'Estat insular situat al nord-oest d\'Europa, format per l\'illa de la Gran Bretanya (Anglaterra, Escòcia i Gal·les) i Irlanda del Nord.', stat1: ['Capital', 'Londres'], stat2: ['Riu destacat', 'El Tàmesi'], cur: 'Per Londres hi passa el Meridià de Greenwich (0°), que marca l\'hora de referència mundial.' },
+            pais_irlanda: { layer: 'politic', icon: '🇮🇪', cat: 'País d\'Europa', title: 'Irlanda (Capital: Dublín)', desc: 'Illa situada a l\'oest de la Gran Bretanya, envoltada per l\'oceà Atlàntic.', stat1: ['Capital', 'Dublín'], stat2: ['Sobrenom', 'L\'Illa Esmeralda'], cur: 'Li diuen l\'Illa Esmeralda pels seus prats verds intensos gràcies a la pluja freqüent.' },
+            pais_grecia: { layer: 'politic', icon: '🇬🇷', cat: 'País d\'Europa', title: 'Grècia (Capital: Atenes)', desc: 'Situada al sud-est d\'Europa, a l\'extrem de la península Balcànica, amb milers d\'illes al mar Egeu i Jònic.', stat1: ['Capital', 'Atenes'], stat2: ['Mar', 'Mar Mediterrània'], cur: 'A l\'antiga Grècia van néixer la democràcia i els Jocs Olímpics.' },
+            pais_noruega: { layer: 'politic', icon: '🇳🇴', cat: 'País d\'Europa', title: 'Noruega (Capital: Oslo)', desc: 'País nòrdic situat a l\'oest de la península Escandinava, amb una costa plena de fiords profunds.', stat1: ['Capital', 'Oslo'], stat2: ['Península', 'Escandinava'], cur: 'Al nord de Noruega es poden veure les espectaculars aurores boreals a l\'hivern.' },
+            pais_suecia: { layer: 'politic', icon: '🇸🇪', cat: 'País d\'Europa', title: 'Suècia (Capital: Estocolm)', desc: 'País escandinau situat entre Noruega i el mar Bàltic, cobert de grans boscos i milers de llacs.', stat1: ['Capital', 'Estocolm'], stat2: ['Mar', 'Mar Bàltica'], cur: 'La seva capital, Estocolm, està construïda sobre 14 illes unides per més de 50 ponts.' },
+            pais_polonia: { layer: 'politic', icon: '🇵🇱', cat: 'País d\'Europa', title: 'Polònia (Capital: Varsòvia)', desc: 'Gran país de l\'Europa central situat entre Alemanya i el mar Bàltic.', stat1: ['Capital', 'Varsòvia'], stat2: ['Relleu', 'Gran Plana Europea'], cur: 'A Polònia hi va néixer la científica Marie Curie, guanyadora de dos premis Nobel.' },
+            pais_ucraina: { layer: 'politic', icon: '🇺🇦', cat: 'País d\'Europa', title: 'Ucraïna (Capital: Kíiv)', desc: 'Situada a l\'Europa de l\'Est, és el país més extens situat íntegrament dins del continent europeu.', stat1: ['Capital', 'Kíiv'], stat2: ['Mar', 'Mar Negra'], cur: 'Les seves extenses planes fèrtils fan que sigui coneguda com el "graner d\'Europa".' },
+
+            // Físic (Muntanyes, Mars, Rius, Penínsules, Illes)
+            munt_alps: { layer: 'fisic', icon: '🏔️', cat: 'Serralada Europea', title: 'Els Alps', desc: 'És la serralada més alta i extensa de l\'Europa central (entre França, Itàlia, Suïssa i Àustria).', stat1: ['Cim més alt', 'Mont Blanc (4.808 m)'], stat2: ['Rius que hi neixen', 'Rin i Roine'], cur: 'Als Alps hi ha moltes glaceres i estacions d\'esquí famoses arreu del món.' },
+            munt_pirineus: { layer: 'fisic', icon: '⛰️', cat: 'Serralada Europea', title: 'Els Pirineus', desc: 'Serralada que fa de frontera natural entre Espanya (incloent-hi Catalunya) i França.', stat1: ['Cim més alt', 'Aneto (3.404 m)'], stat2: ['Longitud', '430 km'], cur: 'Dins dels Pirineus s\'hi amaga un petit país independent: el Principat d\'Andorra.' },
+            munt_apenins: { layer: 'fisic', icon: '🌋', cat: 'Serralada Europea', title: 'Els Apenins', desc: 'Serralada que recorre de nord a sud tota la península Itàlica com si fos la seva columna vertebral.', stat1: ['Situació', 'Península Itàlica'], stat2: ['Volcà famós', 'El Vesuvi'], cur: 'A prop dels Apenins i a Sicília hi ha volcans actius com el Vesuvi i l\'Etna.' },
+            munt_carpats: { layer: 'fisic', icon: '🌲', cat: 'Serralada Europea', title: 'Els Carpats', desc: 'Gran serralada en forma d\'arc situada a l\'Europa central i oriental (Polònia, Eslovàquia, Ucraïna i Romania).', stat1: ['Forma', 'En forma d\'arc'], stat2: ['Fauna', 'Óssos i llops'], cur: 'Als boscos dels Carpats hi viu la població més gran d\'óssos bruns i llops d\'Europa.' },
+            munt_escandinaus: { layer: 'fisic', icon: '❄️', cat: 'Serralada Europea', title: 'Muntanyes Escandinaves', desc: 'Serralada antiga que recorre la península Escandinava entre Noruega i Suècia.', stat1: ['Península', 'Escandinava'], stat2: ['Clima', 'Fred i nòrdic'], cur: 'Són muntanyes molt antigues desgastades pel gel de les glaciacions.' },
+            munt_urals: { layer: 'fisic', icon: '🧭', cat: 'Frontera Continental', title: 'Muntanyes Urals', desc: 'Serralada que s\'estén de nord a sud a Rússia i que marca el límit natural entre Europa i Àsia.', stat1: ['Funció', 'Separa Europa d\'Àsia'], stat2: ['Longitud', '2.500 km'], cur: 'Hi ha monuments on pots posar un peu a Europa i l\'altre a Àsia alhora!' },
+            mar_atlantic: { layer: 'fisic', icon: '🌊', cat: 'Oceà', title: 'Oceà Atlàntic', desc: 'És el segon oceà més gran de la Terra i banya tota la costa occidental d\'Europa (Portugal, Espanya, França, Regne Unit, Irlanda i Noruega).', stat1: ['Situació', 'A l\'Oest d\'Europa'], stat2: ['Característica', 'Grans marees'], cur: 'El corrent càlid del Golf que ve de l\'Atlàntic suavitza les temperatures d\'Europa occidental.' },
+            mar_mediterrania: { layer: 'fisic', icon: '☀️', cat: 'Mar', title: 'Mar Mediterrània', desc: 'Mar gairebé tancat situat al sud d\'Europa, entre Europa, Àfrica i Àsia. Es connecta amb l\'Atlàntic per l\'estret de Gibraltar.', stat1: ['Situació', 'Al Sud d\'Europa'], stat2: ['Clima', 'Estius càlids i secs'], cur: 'És el mar que banya tota la costa de Catalunya i les Illes Balears.' },
+            mar_nord: { layer: 'fisic', icon: '⛵', cat: 'Mar', title: 'Mar del Nord', desc: 'Mar obert a l\'oceà Atlàntic situat entre la Gran Bretanya, Noruega, Dinamarca, Alemanya i els Països Baixos.', stat1: ['Situació', 'Nord-oest d\'Europa'], stat2: ['Riu que hi arriba', 'El Rin i el Tàmesi'], cur: 'És una de les rutes marítimes més transitades del món.' },
+            mar_baltica: { layer: 'fisic', icon: '🧊', cat: 'Mar', title: 'Mar Bàltica', desc: 'Mar interior del nord d\'Europa envoltat per Suècia, Finlàndia, Estònia, Letònia, Lituània, Polònia i Alemanya.', stat1: ['Situació', 'Nord d\'Europa'], stat2: ['Aigua', 'Poc salada'], cur: 'A l\'hivern, les parts més al nord del mar Bàltic es glacen!' },
+            mar_negra: { layer: 'fisic', icon: '⚓', cat: 'Mar', title: 'Mar Negra', desc: 'Mar interior situat al sud-est d\'Europa, entre Ucraïna, Romania, Bulgària i Turquia.', stat1: ['Situació', 'Sud-est d\'Europa'], stat2: ['Riu que hi arriba', 'El Danubi'], cur: 'Rep les aigües de grans rius europeus com el Danubi i el Dnièper.' },
+            riu_volga: { layer: 'fisic', icon: '💧', cat: 'Riu d\'Europa', title: 'El riu Volga', desc: 'És el riu més llarg i cabalós de tot Europa. Recorre Rússia i desemboca al mar Caspi.', stat1: ['Longitud', '3.530 km (el més llarg)'], stat2: ['País', 'Rússia'], cur: 'És tan ample en alguns trams que hi naveguen grans vaixells de mercaderies.' },
+            riu_danubi: { layer: 'fisic', icon: '🚢', cat: 'Riu d\'Europa', title: 'El riu Danubi', desc: 'És el segon riu més llarg d\'Europa. Neix a Alemanya i travessa 10 països fins a desembocar al mar Negra.', stat1: ['Longitud', '2.850 km'], stat2: ['Passa per', 'Viena, Budapest i Belgrad'], cur: 'És el riu del món que travessa més països diferents!' },
+            riu_rin: { layer: 'fisic', icon: '🏰', cat: 'Riu d\'Europa', title: 'El riu Rin', desc: 'Neix als Alps suïssos, travessa Alemanya i desemboca al mar del Nord (als Països Baixos).', stat1: ['Longitud', '1.230 km'], stat2: ['Desembocadura', 'Mar del Nord'], cur: 'A les seves ribes hi ha desenes de castells medievals i vinyes.' },
+            riu_sena: { layer: 'fisic', icon: '🗼', cat: 'Riu d\'Europa', title: 'El riu Sena', desc: 'Riu principal del nord de França que travessa la ciutat de París i desemboca al canal de la Mànega.', stat1: ['Longitud', '777 km'], stat2: ['Ciutat clau', 'París'], cur: 'A París hi ha 37 ponts que creuen el riu Sena.' },
+            riu_tamesi: { layer: 'fisic', icon: '🎡', cat: 'Riu d\'Europa', title: 'El riu Tàmesi', desc: 'És el riu més conegut d\'Anglaterra. Travessa la ciutat de Londres i desemboca al mar del Nord.', stat1: ['Longitud', '346 km'], stat2: ['Ciutat clau', 'Londres'], cur: 'El famós pont levadís Tower Bridge creua el Tàmesi al centre de Londres.' },
+            pen_iberica: { layer: 'fisic', icon: '🗺️', cat: 'Península', title: 'Península Ibèrica', desc: 'Situada al sud-oest d\'Europa, envoltada pel mar Mediterrani i l\'oceà Atlàntic, i unida al continent pels Pirineus.', stat1: ['Països', 'Espanya, Portugal, Andorra'], stat2: ['Situació', 'Sud-oest d\'Europa'], cur: 'Una península és una extensió de terra envoltada d\'aigua per totes parts menys per una (l\'istme).' },
+            pen_italica: { layer: 'fisic', icon: '👢', cat: 'Península', title: 'Península Itàlica', desc: 'Península allargada al sud d\'Europa, envoltada pel mar Mediterrani (mar Tirrè i mar Adriàtic).', stat1: ['Forma', 'De bota'], stat2: ['País', 'Itàlia'], cur: 'Està separada de la resta d\'Europa per la gran barrera dels Alps.' },
+            pen_escandinava: { layer: 'fisic', icon: '🦌', cat: 'Península', title: 'Península Escandinava', desc: 'És la península més gran d\'Europa, situada al nord del continent.', stat1: ['Països', 'Noruega i Suècia'], stat2: ['Extensió', 'La més gran d\'Europa'], cur: 'Als seus boscos del nord hi viuen rens i ants.' },
+            illa_gran_bretanya: { layer: 'fisic', icon: '🏝️', cat: 'Illa d\'Europa', title: 'Gran Bretanya', desc: 'És l\'illa més gran d\'Europa, situada al nord-oest del continent, separada de França pel canal de la Mànega.', stat1: ['Mida', 'Illa més gran d\'Europa'], stat2: ['Països', 'Anglaterra, Escòcia, Gal·les'], cur: 'Està connectada amb França per un túnel submarí de 50 km per on passen trens (l\'Eurotúnel).' },
+            illa_sicilia: { layer: 'fisic', icon: '🍋', cat: 'Illa del Mediterrani', title: 'Sicília', desc: 'És l\'illa més gran del mar Mediterrani, situada just a la punta de la bota d\'Itàlia.', stat1: ['País', 'Itàlia'], stat2: ['Volcà', 'L\'Etna (3.357 m)'], cur: 'A Sicília hi ha l\'Etna, el volcà actiu més alt d\'Europa.' },
+            illa_balears: { layer: 'fisic', icon: '🏖️', cat: 'Arxipèlag Mediterrani', title: 'Illes Balears', desc: 'Arxipèlag situat al mar Mediterrani, davant de la costa est de la península Ibèrica (Mallorca, Menorca, Eivissa i Formentera).', stat1: ['Capital', 'Palma'], stat2: ['Llengua', 'Català i castellà'], cur: 'Un conjunt d\'illes properes entre si s\'anomena arxipèlag.' }
+        };
+
+        let eurCurrentLayer = 'politic';
+        let eurCurrentMode = 'explora';
+        let eurChallengeTargetKey = null;
+        let eurChallengeScore = 0;
+        let eurChallengeLives = 3;
+
+        function setEurLayer(layer) {
+            eurCurrentLayer = layer;
+            document.getElementById('eur-layer-politic').className = layer === 'politic'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-amber-400 text-slate-900 shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+            document.getElementById('eur-layer-fisic').className = layer === 'fisic'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-emerald-500 text-white shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+
+            document.getElementById('eur-group-politic').classList.toggle('hidden', layer !== 'politic');
+            document.getElementById('eur-group-fisic').classList.toggle('hidden', layer !== 'fisic');
+
+            if (eurCurrentMode === 'repte') {
+                nextEurChallenge();
+            }
+        }
+
+        function setEurMode(mode) {
+            eurCurrentMode = mode;
+            document.getElementById('eur-mode-explora').className = mode === 'explora'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-sky-600 text-white shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+            document.getElementById('eur-mode-repte').className = mode === 'repte'
+                ? "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm bg-amber-500 text-slate-950 shadow-sm transition cursor-pointer"
+                : "px-3.5 py-2 rounded-xl font-display font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition cursor-pointer";
+
+            document.getElementById('eur-challenge-bar').classList.toggle('hidden', mode !== 'repte');
+            document.getElementById('eur-challenge-feedback').classList.add('hidden');
+
+            if (mode === 'repte') {
+                eurChallengeScore = 0;
+                eurChallengeLives = 3;
+                updateEurLivesUI();
+                document.getElementById('eur-challenge-score').textContent = "0";
+                nextEurChallenge();
+            }
+        }
+
+        function updateEurLivesUI() {
+            document.getElementById('eur-challenge-lives').textContent = '❤️'.repeat(eurChallengeLives) + '🖤'.repeat(3 - eurChallengeLives);
+        }
+
+        function nextEurChallenge() {
+            if (eurChallengeLives <= 0) {
+                eurChallengeLives = 3;
+                eurChallengeScore = 0;
+                updateEurLivesUI();
+                document.getElementById('eur-challenge-score').textContent = "0";
+            }
+            const keys = Object.keys(EUR_ITEMS).filter(k => EUR_ITEMS[k].layer === eurCurrentLayer);
+            let randomKey = keys[Math.floor(Math.random() * keys.length)];
+            if (randomKey === eurChallengeTargetKey && keys.length > 1) {
+                randomKey = keys[(keys.indexOf(randomKey) + 1) % keys.length];
+            }
+            eurChallengeTargetKey = randomKey;
+            document.getElementById('eur-challenge-target').textContent = EUR_ITEMS[randomKey].title;
+            document.getElementById('eur-challenge-feedback').classList.add('hidden');
+        }
+
+        function handleEurSelect(key) {
+            const item = EUR_ITEMS[key];
+            if (!item) return;
+
+            // Actualitzar fitxa
+            document.getElementById('eur-info-icon').textContent = item.icon;
+            document.getElementById('eur-info-category').textContent = item.cat;
+            document.getElementById('eur-info-title').textContent = item.title;
+            document.getElementById('eur-info-desc').textContent = item.desc;
+            document.getElementById('eur-info-stats').innerHTML = `
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex justify-between items-center">
+                    <span class="text-xs text-slate-500 font-bold">${item.stat1[0]}</span>
+                    <span class="font-display font-bold text-sm text-slate-800">${item.stat1[1]}</span>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 flex justify-between items-center">
+                    <span class="text-xs text-slate-500 font-bold">${item.stat2[0]}</span>
+                    <span class="font-display font-bold text-sm text-slate-800">${item.stat2[1]}</span>
+                </div>
+            `;
+            document.getElementById('eur-info-curiosity').innerHTML = `<strong>💡 Curiositat:</strong> ${item.cur}`;
+
+            // Si estem en Mode Repte
+            if (eurCurrentMode === 'repte' && eurChallengeTargetKey) {
+                const fb = document.getElementById('eur-challenge-feedback');
+                fb.classList.remove('hidden');
+
+                // Permetre encertar si en capa física es fa clic a Espanya quan demana P. Ibèrica o viceversa
+                if (key === eurChallengeTargetKey) {
+                    eurChallengeScore++;
+                    addStars(1);
+                    document.getElementById('eur-challenge-score').textContent = eurChallengeScore;
+                    fb.className = "p-4 rounded-2xl font-bold text-sm text-center shadow-sm bg-emerald-100 border-2 border-emerald-400 text-emerald-950";
+                    fb.textContent = `🎉 Molt ben trobat! Has localitzat "${item.title}" (+1 ⭐).`;
+                    setTimeout(() => {
+                        if (eurCurrentMode === 'repte') nextEurChallenge();
+                    }, 1600);
+                } else {
+                    eurChallengeLives = Math.max(0, eurChallengeLives - 1);
+                    updateEurLivesUI();
+                    if (eurChallengeLives === 0) {
+                        fb.className = "p-4 rounded-2xl font-bold text-sm text-center shadow-sm bg-rose-100 border-2 border-rose-400 text-rose-950";
+                        fb.textContent = `💔 S'han acabat les vides! Puntuació final: ${eurChallengeScore}. Prem "Següent" per tornar a començar.`;
+                    } else {
+                        fb.className = "p-4 rounded-2xl font-bold text-sm text-center shadow-sm bg-amber-100 border-2 border-amber-300 text-amber-950";
+                        fb.textContent = `❌ Això és "${item.title}". Et queden ${eurChallengeLives} vides per trobar "${EUR_ITEMS[eurChallengeTargetKey].title}"!`;
+                    }
+                }
+            }
+        }
+
+        // =========================================================================
+        // SECCIÓ 4: GRAN REPTE FINAL (15 PREGUNTES)
+        // =========================================================================
+        const FINAL_QUIZ_POOL = [
+            { topic: "Orientació", q: "Quin punt cardinal es troba just a l'esquerra d'un mapa quan el Nord és a dalt?", opts: ["L'Est (Llevant)", "L'Oest (Ponent)", "El Sud"], ans: 1, exp: "Als mapes, el Nord és a dalt, el Sud a baix, l'Est a la dreta i l'Oest a l'esquerra." },
+            { topic: "Orientació", q: "Com s'anomena el punt intermedi situat entre el Nord i l'Est?", opts: ["Nord-oest (NO)", "Sud-est (SE)", "Nord-est (NE)"], ans: 2, exp: "El Nord-est (NE) és el punt col·lateral situat entre el Nord i l'Est." },
+            { topic: "Orientació", q: "Quina eina del mapa ens explica el significat dels colors, les línies i els símbols?", opts: ["La llegenda", "L'escala", "El meridià"], ans: 0, exp: "La llegenda és el quadre on s'explica què representa cada color o símbol del mapa." },
+            { topic: "Orientació", q: "Com s'anomena el paral·lel principal (0°) que divideix la Terra en hemisferi Nord i hemisferi Sud?", opts: ["Meridià de Greenwich", "L'Equador", "El Tròpic de Càncer"], ans: 1, exp: "L'Equador és el paral·lel 0° que divideix el planeta en dues meitats: hemisferi Nord i hemisferi Sud." },
+            { topic: "Catalunya Política", q: "Quina és l'única província de Catalunya que NO té sortida al mar?", opts: ["Girona", "Lleida", "Tarragona"], ans: 1, exp: "Lleida és una província d'interior que s'estén des dels Pirineus fins a la Depressió Central." },
+            { topic: "Catalunya Política", q: "Quina comarca pirinenca catalana té l'aranès com a llengua pròpia i la seva capital és Vielha?", opts: ["L'Alt Empordà", "El Segrià", "La Vall d'Aran"], ans: 2, exp: "La Vall d'Aran es troba al nord-oest de Catalunya, té capital a Vielha i l'aranès com a llengua pròpia." },
+            { topic: "Catalunya Física", q: "Quin és el cim més alt de Catalunya, situat als Pirineus?", opts: ["El Pedraforca (2.506 m)", "La Pica d'Estats (3.143 m)", "El Turó de l'Home (1.706 m)"], ans: 1, exp: "La Pica d'Estats (3.143 m), al Pallars Sobirà, és el sostre de Catalunya." },
+            { topic: "Catalunya Física", q: "Quin riu passa per la ciutat de Lleida i desemboca al riu Ebre?", opts: ["El riu Segre", "El riu Ter", "El riu Llobregat"], ans: 0, exp: "El riu Segre neix als Pirineus, passa per Lleida i és l'afluent més important de l'Ebre." },
+            { topic: "Catalunya Física", q: "Com s'anomena la costa de la província de Girona, caracteritzada per ser rocosa i tenir cales?", opts: ["Costa Daurada", "Costa Brava", "Costa del Sol"], ans: 1, exp: "La Costa Brava comprèn tot el litoral de Girona, des de Blanes fins a Portbou." },
+            { topic: "Europa Física", q: "Quina serralada marca la frontera natural a l'est entre Europa i Àsia?", opts: ["Els Alps", "Les Muntanyes Urals", "Els Carpats"], ans: 1, exp: "Les Muntanyes Urals recorren Rússia de nord a sud i separen Europa d'Àsia." },
+            { topic: "Europa Física", q: "Quin és el riu més llarg de tot el continent europeu?", opts: ["El riu Danubi", "El riu Sena", "El riu Volga"], ans: 2, exp: "El Volga (3.530 km) és el riu més llarg d'Europa, seguit del Danubi (2.850 km)." },
+            { topic: "Europa Física", q: "Quina és l'illa més gran del mar Mediterrani, situada a la punta de la península Itàlica?", opts: ["Sicília", "Gran Bretanya", "Mallorca"], ans: 0, exp: "Sicília és l'illa més gran del Mediterrani i pertany a Itàlia." },
+            { topic: "Europa Política", q: "Quina és la capital d'Alemanya?", opts: ["Varsòvia", "Berlín", "Estocolm"], ans: 1, exp: "Berlín és la capital d'Alemanya, un dels països més poblats del centre d'Europa." },
+            { topic: "Europa Política", q: "Quin país europeu té com a capital la ciutat d'Atenes i està situat al sud-est del continent?", opts: ["Portugal", "Polònia", "Grècia"], ans: 2, exp: "Grècia es troba al sud-est d'Europa, banyada pel mar Mediterrani, i la seva capital és Atenes." },
+            { topic: "Europa Política", q: "Per quina capital europea passa el riu Tàmesi?", opts: ["París", "Londres", "Roma"], ans: 1, exp: "El riu Tàmesi travessa Londres (capital del Regne Unit) i desemboca al mar del Nord." }
+        ];
+
+        let quizQuestions = [];
+        let quizCurrentIdx = 0;
+        let quizScore = 0;
+        let quizAnswered = false;
+
+        function startFinalQuiz() {
+            // Barrejar les 15 preguntes
+            quizQuestions = [...FINAL_QUIZ_POOL].sort(() => Math.random() - 0.5);
+            quizCurrentIdx = 0;
+            quizScore = 0;
+
+            document.getElementById('quiz-intro').classList.add('hidden');
+            document.getElementById('quiz-results').classList.add('hidden');
+            document.getElementById('quiz-active').classList.remove('hidden');
+
+            renderFinalQuestion();
+        }
+
+        function renderFinalQuestion() {
+            quizAnswered = false;
+            const q = quizQuestions[quizCurrentIdx];
+            document.getElementById('quiz-topic-tag').textContent = q.topic;
+            document.getElementById('quiz-current-num').textContent = quizCurrentIdx + 1;
+            document.getElementById('quiz-progress-bar').style.width = `${((quizCurrentIdx + 1) / quizQuestions.length) * 100}%`;
+            document.getElementById('quiz-question-text').textContent = q.q;
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-next-wrap').classList.add('hidden');
+
+            const letters = ['A', 'B', 'C'];
+            const list = document.getElementById('quiz-options-list');
+            list.innerHTML = '';
+
+            q.opts.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-sky-500 hover:bg-sky-50/40 flex items-center gap-3.5 transition cursor-pointer group";
+                btn.innerHTML = `
+                    <span class="q-letter flex-shrink-0 w-9 h-9 rounded-xl bg-slate-100 group-hover:bg-sky-600 group-hover:text-white text-slate-700 font-display font-bold flex items-center justify-center text-base transition">
+                        ${letters[idx]}
+                    </span>
+                    <span class="text-base font-semibold text-slate-800">${opt}</span>
+                `;
+                btn.onclick = () => checkFinalAnswer(idx);
+                list.appendChild(btn);
+            });
+
+            document.getElementById('quiz-next-btn').textContent = quizCurrentIdx === quizQuestions.length - 1
+                ? "Veure la meva medalla 🏆"
+                : "Següent pregunta →";
+        }
+
+        function checkFinalAnswer(selectedIdx) {
+            if (quizAnswered) return;
+            quizAnswered = true;
+            const q = quizQuestions[quizCurrentIdx];
+            const isCorrect = selectedIdx === q.ans;
+
+            if (isCorrect) {
+                quizScore++;
+                addStars(2);
+            }
+
+            const buttons = document.getElementById('quiz-options-list').querySelectorAll('button');
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('cursor-pointer', 'hover:border-sky-500', 'hover:bg-sky-50/40');
+                const letter = btn.querySelector('.q-letter');
+                letter.classList.remove('group-hover:bg-sky-600', 'group-hover:text-white');
+
+                if (idx === q.ans) {
+                    btn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 flex items-center gap-3.5";
+                    letter.className = "q-letter flex-shrink-0 w-9 h-9 rounded-xl bg-emerald-500 text-white font-display font-bold flex items-center justify-center text-base";
+                } else if (idx === selectedIdx && !isCorrect) {
+                    btn.className = "w-full text-left p-4 rounded-2xl border-2 border-rose-400 bg-rose-50 flex items-center gap-3.5";
+                    letter.className = "q-letter flex-shrink-0 w-9 h-9 rounded-xl bg-rose-500 text-white font-display font-bold flex items-center justify-center text-base";
+                } else {
+                    btn.classList.add('opacity-55');
+                }
+            });
+
+            const fb = document.getElementById('quiz-feedback');
+            if (isCorrect) {
+                fb.className = "mt-6 p-4 sm:p-5 rounded-2xl border-2 border-emerald-300 bg-emerald-50 text-emerald-950 text-sm sm:text-base leading-relaxed fade-in";
+                fb.innerHTML = `✅ <strong>Molt ben fet! (+2 ⭐)</strong> ${q.exp}`;
+            } else {
+                fb.className = "mt-6 p-4 sm:p-5 rounded-2xl border-2 border-amber-300 bg-amber-50 text-amber-950 text-sm sm:text-base leading-relaxed fade-in";
+                fb.innerHTML = `💡 <strong>Fixa't bé:</strong> ${q.exp}`;
+            }
+            fb.classList.remove('hidden');
+            document.getElementById('quiz-next-wrap').classList.remove('hidden');
+        }
+
+        function nextFinalQuestion() {
+            if (quizCurrentIdx < quizQuestions.length - 1) {
+                quizCurrentIdx++;
+                renderFinalQuestion();
+            } else {
+                showFinalResults();
+            }
+        }
+
+        function showFinalResults() {
+            document.getElementById('quiz-active').classList.add('hidden');
+            document.getElementById('quiz-results').classList.remove('hidden');
+
+            document.getElementById('final-score-text').textContent = `Has encertat ${quizScore} de 15 preguntes!`;
+
+            const medal = document.getElementById('final-medal-icon');
+            const title = document.getElementById('final-rank-title');
+            const desc = document.getElementById('final-rank-desc');
+
+            if (quizScore >= 13) {
+                medal.textContent = "👑";
+                title.textContent = "Mestre Geògraf";
+                desc.textContent = "Extraordinari! Domines l'orientació, els rius i muntanyes de Catalunya i els països i relleus d'Europa com un autèntic cartògraf expert.";
+            } else if (quizScore >= 9) {
+                medal.textContent = "🧭";
+                title.textContent = "Cartògraf Expert";
+                desc.textContent = "Molt bona feina! Ja saps orientar-te molt bé i coneixes els elements principals dels mapes físics i polítics. Un petit repàs i arribaràs al nivell de Mestre!";
+            } else {
+                medal.textContent = "🎒";
+                title.textContent = "Explorador Novell";
+                desc.textContent = "Bon començament! Torna a explorar els mapes interactius de Catalunya i d'Europa en Mode Explora i torna a intentar el repte per pujar de rang!";
+            }
+        }
+    </script>
+</body>
+</html>
